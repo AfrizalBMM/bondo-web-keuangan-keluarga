@@ -5,54 +5,19 @@ import { ref } from 'vue';
 import { Bell, AlertTriangle, AlertCircle, CheckCircle2, TrendingUp, Info, Check, BellRing } from 'lucide-vue-next';
 import axios from 'axios';
 
-// Dummy Notifications
-const notifications = ref([
-    { 
-        id: 1, 
-        type: 'danger', 
-        title: 'Budget Warning', 
-        message: 'Pengeluaran "Hiburan" bulan ini sudah melebihi batas anggaran (120%).', 
-        time: 'Baru saja',
-        read: false,
-        icon: AlertTriangle
-    },
-    { 
-        id: 2, 
-        type: 'warning', 
-        title: 'Pengingat Jatuh Tempo Hutang', 
-        message: 'Cicilan "Kakak (Pinjaman)" sebesar Rp 1.500.000 mendekati tempo (15 Mei 2026).', 
-        time: '2 jam yang lalu',
-        read: false,
-        icon: AlertCircle
-    },
-    { 
-        id: 3, 
-        type: 'success', 
-        title: 'Transaksi Pasangan', 
-        message: 'Pasangan Anda mencatat pemasukan baru "Bonus/THR" sebesar Rp 10.000.000 ke rekening BCA.', 
-        time: 'Kemarin, 09:12',
-        read: true,
-        icon: CheckCircle2
-    },
-    { 
-        id: 4, 
-        type: 'info', 
-        title: 'Progres Tabungan', 
-        message: 'Target "Dana Darurat" berhasil tercapai! Selamat!', 
-        time: '3 hari yang lalu',
-        read: true,
-        icon: TrendingUp
-    },
-    { 
-        id: 5, 
-        type: 'info', 
-        title: 'Laporan Bulan Lalu Siap', 
-        message: 'Laporan finansial bulan Februari sudah bisa diunduh atau dilihat.', 
-        time: '1 Mar 2026',
-        read: true,
-        icon: Info
-    },
-]);
+const props = defineProps({
+    notifications: Array
+});
+
+const getIcon = (type) => {
+    switch(type) {
+        case 'danger': return AlertTriangle;
+        case 'warning': return AlertCircle;
+        case 'success': return CheckCircle2;
+        case 'info': return Info;
+        default: return Bell;
+    }
+};
 
 const getIconColorClass = (type) => {
     switch(type) {
@@ -65,7 +30,11 @@ const getIconColorClass = (type) => {
 };
 
 const markAllAsRead = () => {
-    notifications.value.forEach(n => n.read = true);
+    import('@inertiajs/vue3').then(({ router }) => {
+        router.post(route('notifications.mark-read'), {}, {
+            preserveScroll: true
+        });
+    });
 };
 
 const isSubscribing = ref(false);
@@ -142,11 +111,11 @@ const enablePushNotifications = async () => {
 
                 <!-- Notifications List -->
                 <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden divide-y divide-slate-100 dark:divide-slate-700/50">
-                    <div v-for="notif in notifications" :key="notif.id" 
+                    <div v-for="notif in props.notifications" :key="notif.id" 
                         :class="['p-5 transition-colors flex gap-4', notif.read ? 'opacity-70 bg-transparent' : 'bg-slate-50/50 dark:bg-slate-900/30 border-l-4 border-l-royal-500']">
                         
                         <div :class="['w-12 h-12 rounded-full flex-shrink-0 flex items-center justify-center mt-1', getIconColorClass(notif.type)]">
-                            <component :is="notif.icon" class="w-6 h-6" />
+                            <component :is="getIcon(notif.type)" class="w-6 h-6" />
                         </div>
                         
                         <div class="flex-grow">
@@ -163,9 +132,9 @@ const enablePushNotifications = async () => {
 
                     </div>
                     
-                    <div v-if="notifications.length === 0" class="p-12 text-center text-slate-500 dark:text-slate-400">
+                    <div v-if="!props.notifications || props.notifications.length === 0" class="p-12 text-center text-slate-500 dark:text-slate-400">
                         <Bell class="w-12 h-12 mx-auto mb-3 opacity-50" />
-                        <p>Belum ada notifikasi baru hari ini.</p>
+                        <p>Belum ada notifikasi baru.</p>
                     </div>
                 </div>
 

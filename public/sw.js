@@ -15,15 +15,23 @@ self.addEventListener('push', function (e) {
     }
 });
 
-self.addEventListener('notificationclick', function(e) {
-  var notification = e.notification;
-  var action = e.action;
+self.addEventListener('notificationclick', function (e) {
+    var notification = e.notification;
+    notification.close();
 
-  if (action === 'close') {
-      notification.close();
-  } else {
-      // Handle notification click logic (e.g., open app page)
-      clients.openWindow(notification.data.url || '/');
-      notification.close();
-  }
+    e.waitUntil(
+        clients.matchAll({ type: 'window', includeUncontrolled: true }).then(function (clientList) {
+            // Jika tab sudah terbuka, fokus ke tab tersebut
+            for (var i = 0; i < clientList.length; i++) {
+                var client = clientList[i];
+                if (client.url === (notification.data.url || '/') && 'focus' in client) {
+                    return client.focus();
+                }
+            }
+            // Jika belum ada tab terbuka, buka tab baru
+            if (clients.openWindow) {
+                return clients.openWindow(notification.data.url || '/');
+            }
+        })
+    );
 });

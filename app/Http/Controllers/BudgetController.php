@@ -13,6 +13,11 @@ class BudgetController extends Controller
     public function index(Request $request)
     {
         $family = $request->user()->family;
+
+        if (!$family) {
+            return redirect()->route('onboarding')->with('warning', 'Silakan buat atau gabung keluarga terlebih dahulu.');
+        }
+
         $startOfMonth = Carbon::now()->startOfMonth();
         $endOfMonth = Carbon::now()->endOfMonth();
 
@@ -70,5 +75,18 @@ class BudgetController extends Controller
         \App\Events\FamilyDataUpdated::dispatch($family->id);
 
         return redirect()->back()->with('success', 'Anggaran berhasil disimpan');
+    }
+
+    public function destroy(Request $request, Budget $budget)
+    {
+        if ($budget->family_id !== $request->user()->family_id) {
+            abort(403);
+        }
+
+        $budget->delete();
+
+        \App\Events\FamilyDataUpdated::dispatch($request->user()->family_id);
+
+        return redirect()->back()->with('success', 'Anggaran bulanan berhasil dihapus');
     }
 }

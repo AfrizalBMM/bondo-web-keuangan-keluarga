@@ -6,10 +6,8 @@ use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
-use NotificationChannels\WebPush\WebPushMessage;
-use NotificationChannels\WebPush\WebPushChannel;
 
-class TestWebPushNotification extends Notification
+class MonthlyReportNotification extends Notification
 {
     use Queueable;
 
@@ -28,17 +26,7 @@ class TestWebPushNotification extends Notification
      */
     public function via(object $notifiable): array
     {
-        return [WebPushChannel::class];
-    }
-
-    public function toWebPush(object $notifiable, object $notification): WebPushMessage
-    {
-        return (new WebPushMessage)
-            ->title('Halo dari Bondo!')
-            ->icon('/icons/icon-192x192.png')
-            ->body('Notifikasi PWA sukses! Ini adalah pesan percobaan.')
-            ->action('Buka App', '/')
-            ->data(['url' => '/dashboard']);
+        return ['mail'];
     }
 
     /**
@@ -63,4 +51,23 @@ class TestWebPushNotification extends Notification
             //
         ];
     }
+
+    public function toWebPush($notifiable, $notification)
+    {
+        $lastMonth = now()->subMonth();
+        $monthName = $lastMonth->translatedFormat('F Y');
+        
+        // Kita akan kirim data total dari Command nanti
+        $totalExp = number_format($this->data['expense'], 0, ',', '.');
+        $diff = $this->data['diff'];
+        $status = $diff >= 0 ? "Surplus (Aman) ✅" : "Defisit (Boros) ⚠️";
+
+        return (new WebPushMessage)
+            ->title("📊 Laporan Keuangan $monthName")
+            ->icon('/icons/icon-192x192.png')
+            ->body("Total Belanja: Rp $totalExp. Status: $status")
+            ->data(['url' => url('/reports')]) // Klik untuk lihat grafik detail
+            ->options(['TTL' => 86400]);
+    }
+
 }

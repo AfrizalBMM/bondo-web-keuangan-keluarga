@@ -1,9 +1,9 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
-import { Head, useForm } from '@inertiajs/vue3';
+import { Head, useForm, router } from '@inertiajs/vue3';
 import { useVisibility } from '@/Composables/useVisibility';
 import { ref, computed } from 'vue';
-import { Plus, Target, AlertTriangle, AlertCircle, X, Check, PieChart, Tags, CircleDollarSign } from 'lucide-vue-next';
+import { Plus, Target, AlertTriangle, AlertCircle, X, Check, PieChart, Tags, CircleDollarSign, Edit2, Trash2 } from 'lucide-vue-next';
 import PrimaryButton from '@/Components/PrimaryButton.vue';
 import TextInput from '@/Components/TextInput.vue';
 import InputLabel from '@/Components/InputLabel.vue';
@@ -23,6 +23,7 @@ const IDR = new Intl.NumberFormat('id-ID', {
 });
 
 const isAddModalOpen = ref(false);
+const editingBudgetId = ref(null);
 
 const form = useForm({
     category_id: '',
@@ -52,6 +53,29 @@ const getStatusText = (percent) => {
 
 const totalBudget = computed(() => props.budgets.reduce((acc, curr) => acc + parseFloat(curr.limitAmount || 0), 0));
 const totalSpent = computed(() => props.budgets.reduce((acc, curr) => acc + parseFloat(curr.spentAmount || 0), 0));
+
+const openAddModal = () => {
+    editingBudgetId.value = null;
+    form.reset();
+    form.clearErrors();
+    isAddModalOpen.value = true;
+};
+
+const openEditModal = (budget) => {
+    editingBudgetId.value = budget.id;
+    form.category_id = budget.category_id;
+    form.limitAmount = budget.limitAmount;
+    form.clearErrors();
+    isAddModalOpen.value = true;
+};
+
+const deleteBudget = (id) => {
+    if (confirm('Apakah Anda yakin ingin menghapus anggaran ini?')) {
+        router.delete(route('budget.destroy', id), {
+            preserveScroll: true
+        });
+    }
+};
 
 const submitAddBudget = () => {
     form.post(route('budget.store'), {
@@ -106,7 +130,7 @@ const submitAddBudget = () => {
                     <div class="hidden md:block w-px h-24 bg-slate-200 dark:bg-slate-700"></div>
                     
                     <div class="flex flex-col gap-3 w-full md:w-auto min-w-[200px]">
-                        <PrimaryButton @click="isAddModalOpen = true" class="w-full justify-center bg-royal-600 hover:bg-royal-700 py-3 text-sm">
+                        <PrimaryButton @click="openAddModal" class="w-full justify-center bg-royal-600 hover:bg-royal-700 py-3 text-sm">
                             <Plus class="w-4 h-4 mr-2" />
                             Buat Anggaran Area Baru
                         </PrimaryButton>
@@ -128,8 +152,18 @@ const submitAddBudget = () => {
                                     </div>
                                     <h3 class="font-bold text-lg text-slate-800 dark:text-slate-100">{{ budget.category }}</h3>
                                 </div>
-                                <div :class="['text-xs font-bold px-2 py-1 rounded-md border', getStatusText(getPercentage(budget.spentAmount, budget.limitAmount)).class]">
-                                    {{ getStatusText(getPercentage(budget.spentAmount, budget.limitAmount)).text }}
+                                <div class="flex items-center gap-2">
+                                    <div :class="['text-xs font-bold px-2 py-1 rounded-md border', getStatusText(getPercentage(budget.spentAmount, budget.limitAmount)).class]">
+                                        {{ getStatusText(getPercentage(budget.spentAmount, budget.limitAmount)).text }}
+                                    </div>
+                                    <div class="flex opacity-0 group-hover:opacity-100 transition-opacity ml-2">
+                                        <button @click="openEditModal(budget)" class="p-1.5 text-slate-400 hover:text-royal-600 dark:hover:text-royal-400 transition" title="Edit">
+                                            <Edit2 class="w-4 h-4" />
+                                        </button>
+                                        <button @click="deleteBudget(budget.id)" class="p-1.5 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 transition" title="Hapus">
+                                            <Trash2 class="w-4 h-4" />
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                             
@@ -168,7 +202,7 @@ const submitAddBudget = () => {
             
             <div class="relative bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-md overflow-hidden transform transition-all">
                 <div class="px-6 py-4 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center bg-slate-50/50 dark:bg-slate-800/80">
-                    <h3 class="text-lg font-bold text-slate-900 dark:text-white">Tetapkan Anggaran Baru</h3>
+                    <h3 class="text-lg font-bold text-slate-900 dark:text-white">{{ editingBudgetId ? 'Edit Anggaran' : 'Tetapkan Anggaran Baru' }}</h3>
                     <button @click="isAddModalOpen = false" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300">
                         <X class="w-5 h-5" />
                     </button>
@@ -178,7 +212,7 @@ const submitAddBudget = () => {
                     <div class="space-y-4">
                         <div>
                             <InputLabel for="category" class="flex items-center gap-1.5"><Tags class="w-4 h-4 text-slate-400" /> Pilih Kategori Pengeluaran</InputLabel>
-                            <select id="category" v-model="form.category_id" class="mt-1 block w-full rounded-md border-slate-300 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 shadow-sm focus:border-royal-500 focus:ring-royal-500" required>
+                            <select id="category" v-model="form.category_id" :disabled="editingBudgetId" class="mt-1 block w-full rounded-md border-slate-300 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 shadow-sm focus:border-royal-500 focus:ring-royal-500 disabled:opacity-50" required>
                                 <option value="" disabled selected>Pilih Kategori...</option>
                                 <option v-for="cat in categories" :key="cat.id" :value="cat.id">{{ cat.name }}</option>
                             </select>
@@ -198,7 +232,7 @@ const submitAddBudget = () => {
 
                     <div class="mt-8 flex justify-end gap-3 text-sm border-t border-slate-100 dark:border-slate-700 pt-5">
                         <button type="button" @click="isAddModalOpen = false" class="px-4 py-2 font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-md transition-colors">Batal</button>
-                        <PrimaryButton type="submit" :class="{ 'opacity-25': form.processing }" :disabled="form.processing" class="bg-royal-600 hover:bg-royal-700 shadow-sm">Simpan Anggaran</PrimaryButton>
+                        <PrimaryButton type="submit" :class="{ 'opacity-25': form.processing }" :disabled="form.processing" class="bg-royal-600 hover:bg-royal-700 shadow-sm">{{ editingBudgetId ? 'Simpan Perubahan' : 'Simpan Anggaran' }}</PrimaryButton>
                     </div>
                 </form>
             </div>

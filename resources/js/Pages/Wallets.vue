@@ -1,9 +1,9 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
-import { Head, useForm } from '@inertiajs/vue3';
+import { Head, useForm, router } from '@inertiajs/vue3';
 import { useVisibility } from '@/Composables/useVisibility';
 import { ref } from 'vue';
-import { Plus, Wallet, CreditCard, Building, Smartphone, X, CircleDollarSign, Palette } from 'lucide-vue-next';
+import { Plus, Wallet, CreditCard, Building, Smartphone, X, CircleDollarSign, Palette, Edit2, Trash2 } from 'lucide-vue-next';
 import PrimaryButton from '@/Components/PrimaryButton.vue';
 import TextInput from '@/Components/TextInput.vue';
 import InputLabel from '@/Components/InputLabel.vue';
@@ -22,6 +22,7 @@ const IDR = new Intl.NumberFormat('id-ID', {
 });
 
 const isAddModalOpen = ref(false);
+const editingWalletId = ref(null);
 
 const form = useForm({
     name: '',
@@ -48,14 +49,49 @@ const getIconForType = (type) => {
     }
 };
 
+const openAddModal = () => {
+    editingWalletId.value = null;
+    form.reset();
+    form.clearErrors();
+    isAddModalOpen.value = true;
+};
+
+const openEditModal = (wallet) => {
+    editingWalletId.value = wallet.id;
+    form.name = wallet.name;
+    form.type = wallet.type;
+    form.initialBalance = wallet.balance; // Using balance as initialBalance in form
+    form.color = wallet.color;
+    form.clearErrors();
+    isAddModalOpen.value = true;
+};
+
 const submitAddWallet = () => {
-    form.post(route('wallets.store'), {
-        preserveScroll: true,
-        onSuccess: () => {
-            isAddModalOpen.value = false;
-            form.reset();
-        }
-    });
+    if (editingWalletId.value) {
+        form.put(route('wallets.update', editingWalletId.value), {
+            preserveScroll: true,
+            onSuccess: () => {
+                isAddModalOpen.value = false;
+                form.reset();
+            }
+        });
+    } else {
+        form.post(route('wallets.store'), {
+            preserveScroll: true,
+            onSuccess: () => {
+                isAddModalOpen.value = false;
+                form.reset();
+            }
+        });
+    }
+};
+
+const deleteWallet = (id) => {
+    if (confirm('Apakah Anda yakin ingin menghapus dompet ini? Seluruh transaksi terkait mungkin akan terpengaruh.')) {
+        router.delete(route('wallets.destroy', id), {
+            preserveScroll: true
+        });
+    }
 };
 
 </script>
@@ -73,7 +109,7 @@ const submitAddWallet = () => {
                         <h1 class="text-3xl font-bold text-slate-900 dark:text-slate-50">Dompet Tersimpan</h1>
                         <p class="mt-1 text-slate-500 dark:text-slate-400">Kelola semua sumber dana keluarga dalam satu tempat.</p>
                     </div>
-                    <PrimaryButton @click="isAddModalOpen = true" class="bg-royal-600 hover:bg-royal-700 flex items-center gap-2">
+                    <PrimaryButton @click="openAddModal" class="bg-royal-600 hover:bg-royal-700 flex items-center gap-2">
                         <Plus class="w-4 h-4" />
                         Tambah Dompet
                     </PrimaryButton>
@@ -101,8 +137,18 @@ const submitAddWallet = () => {
                                     <h3 class="font-semibold text-lg tracking-wide">{{ wallet.name }}</h3>
                                     <p class="text-white/80 text-xs mt-0.5">{{ wallet.type }}</p>
                                 </div>
-                                <div class="bg-white/20 p-2 rounded-lg backdrop-blur-md border border-white/30 hidden sm:block">
-                                    <component :is="getIconForType(wallet.type)" class="w-5 h-5" />
+                                <div class="flex items-center gap-2">
+                                    <div class="opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
+                                        <button @click.stop="openEditModal(wallet)" class="bg-white/20 p-2 rounded-lg backdrop-blur-md border border-white/30 hover:bg-white/30 transition-colors" title="Edit">
+                                            <Edit2 class="w-4 h-4" />
+                                        </button>
+                                        <button @click.stop="deleteWallet(wallet.id)" class="bg-rose-500/50 p-2 rounded-lg backdrop-blur-md border border-rose-500/30 hover:bg-rose-500/70 transition-colors" title="Hapus">
+                                            <Trash2 class="w-4 h-4" />
+                                        </button>
+                                    </div>
+                                    <div class="bg-white/20 p-2 rounded-lg backdrop-blur-md border border-white/30 hidden sm:block group-hover:hidden transition-all">
+                                        <component :is="getIconForType(wallet.type)" class="w-5 h-5" />
+                                    </div>
                                 </div>
                             </div>
                             
@@ -116,7 +162,7 @@ const submitAddWallet = () => {
                     </div>
 
                     <!-- Empty Add Wallet Card -->
-                    <button @click="isAddModalOpen = true" class="rounded-2xl border-2 border-dashed border-slate-300 dark:border-slate-700 flex flex-col items-center justify-center p-6 h-52 hover:border-royal-500 hover:bg-royal-50 dark:hover:bg-royal-900/20 transition-all text-slate-500 hover:text-royal-600 dark:text-slate-400 dark:hover:text-royal-400 group">
+                    <button @click="openAddModal" class="rounded-2xl border-2 border-dashed border-slate-300 dark:border-slate-700 flex flex-col items-center justify-center p-6 h-52 hover:border-royal-500 hover:bg-royal-50 dark:hover:bg-royal-900/20 transition-all text-slate-500 hover:text-royal-600 dark:text-slate-400 dark:hover:text-royal-400 group">
                         <div class="w-12 h-12 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center mb-3 group-hover:bg-royal-100 dark:group-hover:bg-royal-900/50 transition-colors">
                             <Plus class="w-6 h-6" />
                         </div>
@@ -136,7 +182,7 @@ const submitAddWallet = () => {
             <!-- Modal Box -->
             <div class="relative bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-md overflow-hidden transform transition-all">
                 <div class="px-6 py-4 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center bg-slate-50/50 dark:bg-slate-800/80">
-                    <h3 class="text-lg font-bold text-slate-900 dark:text-white">Tambah Dompet Baru</h3>
+                    <h3 class="text-lg font-bold text-slate-900 dark:text-white">{{ editingWalletId ? 'Edit Dompet' : 'Tambah Dompet Baru' }}</h3>
                     <button @click="isAddModalOpen = false" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300">
                         <X class="w-5 h-5" />
                     </button>
@@ -187,7 +233,7 @@ const submitAddWallet = () => {
 
                     <div class="mt-8 flex justify-end gap-3">
                         <button type="button" @click="isAddModalOpen = false" class="px-4 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-md transition-colors">Batal</button>
-                        <PrimaryButton type="submit" :class="{ 'opacity-25': form.processing }" :disabled="form.processing" class="bg-royal-600 hover:bg-royal-700">Simpan Dompet</PrimaryButton>
+                        <PrimaryButton type="submit" :class="{ 'opacity-25': form.processing }" :disabled="form.processing" class="bg-royal-600 hover:bg-royal-700">{{ editingWalletId ? 'Simpan Perubahan' : 'Simpan Dompet' }}</PrimaryButton>
                     </div>
                 </form>
             </div>

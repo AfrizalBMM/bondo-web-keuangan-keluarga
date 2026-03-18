@@ -52,4 +52,44 @@ class AssetController extends Controller
 
         return redirect()->back()->with('success', 'Aset berhasil ditambahkan');
     }
+
+    public function update(Request $request, Asset $asset)
+    {
+        if ($asset->family_id !== $request->user()->family_id) {
+            abort(403);
+        }
+
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'type' => 'required|string',
+            'initialValue' => 'required|numeric|min:0',
+            'purchaseDate' => 'required|date',
+            'depreciationRate' => 'required|numeric',
+        ]);
+
+        $asset->update([
+            'name' => $validated['name'],
+            'type' => $validated['type'],
+            'initial_value' => $validated['initialValue'],
+            'purchase_date' => $validated['purchaseDate'],
+            'depreciation_rate' => $validated['depreciationRate'],
+        ]);
+
+        FamilyDataUpdated::dispatch($request->user()->family_id);
+
+        return redirect()->back()->with('success', 'Data aset berhasil diperbarui');
+    }
+
+    public function destroy(Request $request, Asset $asset)
+    {
+        if ($asset->family_id !== $request->user()->family_id) {
+            abort(403);
+        }
+
+        $asset->delete();
+
+        FamilyDataUpdated::dispatch($request->user()->family_id);
+
+        return redirect()->back()->with('success', 'Aset berhasil dihapus');
+    }
 }

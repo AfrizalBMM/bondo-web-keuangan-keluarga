@@ -1,84 +1,113 @@
 <?php
 
 use App\Http\Controllers\ProfileController;
-use Illuminate\Foundation\Application;
+use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\WalletController;
+use App\Http\Controllers\TransactionController;
+use App\Http\Controllers\CategoryController;
+use App\Http\Controllers\AssetController;
+use App\Http\Controllers\GoalController;
+use App\Http\Controllers\DebtController;
+use App\Http\Controllers\BudgetController;
+use App\Http\Controllers\ReportController;
+use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\PushNotificationController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
+// 1. Landing & Auth Redirect
 Route::get('/', function () {
-    return Inertia::render('Welcome', [
-        'canLogin' => Route::has('login'),
-        'canRegister' => Route::has('register'),
-        'laravelVersion' => Application::VERSION,
-        'phpVersion' => PHP_VERSION,
-    ]);
+    return redirect()->route('login');
 });
 
-Route::get('/dashboard', function () {
-    return Inertia::render('Dashboard');
-})->middleware(['auth', 'verified'])->name('dashboard');
-
+// 2. Onboarding (Bisa diakses tanpa harus punya keluarga dulu)
 Route::get('/onboarding', function () {
     return Inertia::render('Onboarding');
 })->middleware(['auth', 'verified'])->name('onboarding');
 
-Route::get('/wallets', [App\Http\Controllers\WalletController::class, 'index'])->middleware(['auth', 'verified'])->name('wallets');
-Route::post('/wallets', [App\Http\Controllers\WalletController::class, 'store'])->middleware(['auth', 'verified'])->name('wallets.store');
+// 3. Family Actions (Proses pembuatan/join keluarga)
+Route::post('/family/create', [App\Http\Controllers\FamilyController::class, 'store'])
+    ->middleware(['auth', 'verified'])
+    ->name('family.create');
 
-Route::get('/transactions', [App\Http\Controllers\TransactionController::class, 'index'])->middleware(['auth', 'verified'])->name('transactions');
-Route::post('/transactions', [App\Http\Controllers\TransactionController::class, 'store'])->middleware(['auth', 'verified'])->name('transactions.store');
-Route::post('/transactions/smart-add', [App\Http\Controllers\TransactionController::class, 'smartStore'])->middleware(['auth', 'verified'])->name('transactions.smart');
+Route::post('/family/join', [App\Http\Controllers\FamilyController::class, 'join'])
+    ->middleware(['auth', 'verified'])
+    ->name('family.join');
 
-Route::get('/categories', [App\Http\Controllers\CategoryController::class, 'index'])->middleware(['auth', 'verified'])->name('categories');
-Route::post('/categories', [App\Http\Controllers\CategoryController::class, 'store'])->middleware(['auth', 'verified'])->name('categories.store');
+// 4. PROTECTED ROUTES (Hanya bisa diakses jika sudah login & PUNYA KELUARGA)
+Route::middleware(['auth', 'verified', 'has_family'])->group(function () {
+    
+    // Dashboard
+    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
-Route::get('/assets', [App\Http\Controllers\AssetController::class, 'index'])->middleware(['auth', 'verified'])->name('assets');
-Route::post('/assets', [App\Http\Controllers\AssetController::class, 'store'])->middleware(['auth', 'verified'])->name('assets.store');
+    // Wallets - Menggunakan penamaan manual agar tepat 'wallets' bukan 'wallets.index'
+    Route::get('/wallets', [WalletController::class, 'index'])->name('wallets');
+    Route::post('/wallets', [WalletController::class, 'store'])->name('wallets.store');
+    Route::put('/wallets/{wallet}', [WalletController::class, 'update'])->name('wallets.update');
+    Route::delete('/wallets/{wallet}', [WalletController::class, 'destroy'])->name('wallets.destroy');
 
-Route::get('/goals', [App\Http\Controllers\GoalController::class, 'index'])->middleware(['auth', 'verified'])->name('goals');
-Route::post('/goals', [App\Http\Controllers\GoalController::class, 'store'])->middleware(['auth', 'verified'])->name('goals.store');
-Route::post('/goals/{goal}/deposit', [App\Http\Controllers\GoalController::class, 'deposit'])->middleware(['auth', 'verified'])->name('goals.deposit');
+    // Transactions & Smart Add
+    Route::post('/transactions/smart-add', [TransactionController::class, 'smartStore'])->name('transactions.smart');
+    Route::get('/transactions', [TransactionController::class, 'index'])->name('transactions');
+    Route::post('/transactions', [TransactionController::class, 'store'])->name('transactions.store');
+    Route::put('/transactions/{transaction}', [TransactionController::class, 'update'])->name('transactions.update');
+    Route::delete('/transactions/{transaction}', [TransactionController::class, 'destroy'])->name('transactions.destroy');
 
-Route::get('/debts', [App\Http\Controllers\DebtController::class, 'index'])->middleware(['auth', 'verified'])->name('debts');
-Route::post('/debts', [App\Http\Controllers\DebtController::class, 'store'])->middleware(['auth', 'verified'])->name('debts.store');
-Route::post('/debts/{debt}/payment', [App\Http\Controllers\DebtController::class, 'payment'])->middleware(['auth', 'verified'])->name('debts.payment');
+    // Categories
+    Route::get('/categories', [CategoryController::class, 'index'])->name('categories');
+    Route::post('/categories', [CategoryController::class, 'store'])->name('categories.store');
+    Route::put('/categories/{category}', [CategoryController::class, 'update'])->name('categories.update');
+    Route::delete('/categories/{category}', [CategoryController::class, 'destroy'])->name('categories.destroy');
 
-Route::get('/budget', [App\Http\Controllers\BudgetController::class, 'index'])->middleware(['auth', 'verified'])->name('budget');
-Route::post('/budget', [App\Http\Controllers\BudgetController::class, 'store'])->middleware(['auth', 'verified'])->name('budget.store');
+    // Assets
+    Route::get('/assets', [AssetController::class, 'index'])->name('assets');
+    Route::post('/assets', [AssetController::class, 'store'])->name('assets.store');
+    Route::put('/assets/{asset}', [AssetController::class, 'update'])->name('assets.update');
+    Route::delete('/assets/{asset}', [AssetController::class, 'destroy'])->name('assets.destroy');
 
-Route::get('/reports', function () {
-    return Inertia::render('Reports');
-})->middleware(['auth', 'verified'])->name('reports');
+    // Goals & Deposit
+    Route::get('/goals', [GoalController::class, 'index'])->name('goals');
+    Route::post('/goals', [GoalController::class, 'store'])->name('goals.store');
+    Route::put('/goals/{goal}', [GoalController::class, 'update'])->name('goals.update');
+    Route::delete('/goals/{goal}', [GoalController::class, 'destroy'])->name('goals.destroy');
+    Route::post('/goals/{goal}/deposit', [GoalController::class, 'deposit'])->name('goals.deposit');
 
-Route::get('/notifications', function () {
-    return Inertia::render('Notifications');
-})->middleware(['auth', 'verified'])->name('notifications');
+    // Debts & Payment
+    Route::get('/debts', [DebtController::class, 'index'])->name('debts');
+    Route::post('/debts', [DebtController::class, 'store'])->name('debts.store');
+    Route::put('/debts/{debt}', [DebtController::class, 'update'])->name('debts.update');
+    Route::delete('/debts/{debt}', [DebtController::class, 'destroy'])->name('debts.destroy');
+    Route::post('/debts/{debt}/payment', [DebtController::class, 'payment'])->name('debts.payment');
 
-Route::post('/push-subscriptions', [App\Http\Controllers\PushNotificationController::class, 'store'])->middleware(['auth', 'verified'])->name('push.subscribe');
-Route::post('/push-subscriptions/delete', [App\Http\Controllers\PushNotificationController::class, 'destroy'])->middleware(['auth', 'verified'])->name('push.unsubscribe');
+    // Budgets
+    Route::get('/budget', [BudgetController::class, 'index'])->name('budget');
+    Route::post('/budget', [BudgetController::class, 'store'])->name('budget.store');
+    Route::delete('/budget/{budget}', [BudgetController::class, 'destroy'])->name('budget.destroy');
 
-Route::post('/family/create', function () {
-    return redirect()->route('dashboard');
-})->middleware(['auth', 'verified'])->name('family.create');
+    // Reports & Notifications
+    Route::get('/reports', [ReportController::class, 'index'])->name('reports');
+    Route::get('/reports/export-pdf', [ReportController::class, 'exportPdf'])->name('reports.export-pdf');
+    Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications');
+    Route::post('/notifications/mark-read', [NotificationController::class, 'markAllAsRead'])->name('notifications.mark-read');
 
-Route::post('/family/join', function () {
-    return redirect()->route('dashboard');
-})->middleware(['auth', 'verified'])->name('family.join');
+    // Push Notifications
+    Route::post('/push-subscriptions', [PushNotificationController::class, 'store'])->name('push.subscribe');
+    Route::post('/push-subscriptions/delete', [PushNotificationController::class, 'destroy'])->name('push.unsubscribe');
+});
 
+// 5. User Profile (Standar Laravel Breeze)
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+    Route::delete('/profile/family/{family}', [ProfileController::class, 'destroyFamily'])->name('family.destroy');
+    Route::post('/profile/family/leave', [ProfileController::class, 'leaveFamily'])->name('family.leave');
 });
 
-require __DIR__.'/auth.php';
-
+// 6. Test Route
 Route::get('/test-push', function (Illuminate\Http\Request $request) {
-    if (!$request->user()) {
-        return "Must log in first.";
-    }
-    
     $request->user()->notify(new \App\Notifications\TestWebPushNotification());
-    
-    return "Push notification queued/sent! Check browser.";
+    return "Push notification sent!";
 })->middleware(['auth', 'verified']);
+
+require __DIR__.'/auth.php';

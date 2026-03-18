@@ -18,45 +18,21 @@ const IDR = new Intl.NumberFormat('id-ID', {
     maximumFractionDigits: 0,
 });
 
-const timeFilter = ref('Bulan Ini');
+const props = defineProps({
+    metrics: Object,
+    trendChartData: Object,
+    categoryChartData: Object,
+    currentFilter: String
+});
+
+const timeFilter = ref(props.currentFilter || 'Bulan Ini');
 const timeOptions = ['7 Hari Terakhir', '30 Hari Terakhir', 'Bulan Ini', 'Tahun Ini', 'Kustom'];
 
-// Mock Metrics
-const metrics = {
-    avgDailyExpense: 154000,
-    cashflowDifference: 4500000, // Income - Expense
-    largestTransaction: {
-        name: 'Pembayaran Asuransi Tahunan',
-        amount: 3500000,
-        date: '12 Mar 2026'
-    }
-};
-
-// --- CHART DATA ---
-
-// 1. Line Chart: Income vs Expense Trend (6 Months)
-const trendChartData = {
-    labels: ['Okt', 'Nov', 'Des', 'Jan', 'Feb', 'Mar'],
-    datasets: [
-        {
-            label: 'Pemasukan',
-            data: [15000000, 15500000, 25000000, 15000000, 15000000, 16000000],
-            borderColor: '#10b981', // emerald-500
-            backgroundColor: 'rgba(16, 185, 129, 0.1)',
-            borderWidth: 2,
-            tension: 0.4,
-            fill: true
-        },
-        {
-            label: 'Pengeluaran',
-            data: [12000000, 13000000, 18000000, 11000000, 12500000, 11500000],
-            borderColor: '#f43f5e', // rose-500
-            backgroundColor: 'rgba(244, 63, 94, 0.1)',
-            borderWidth: 2,
-            tension: 0.4,
-            fill: true
-        }
-    ]
+const applyFilter = () => {
+    // Reload page with new filter
+    import('@inertiajs/vue3').then(({ router }) => {
+        router.get(route('reports'), { filter: timeFilter.value }, { preserveState: true });
+    });
 };
 
 const trendChartOptions = {
@@ -69,23 +45,6 @@ const trendChartOptions = {
         y: { beginAtZero: true, grid: { color: 'rgba(148, 163, 184, 0.1)' } },
         x: { grid: { display: false } }
     }
-};
-
-// 2. Bar Chart: Expense by Category
-const categoryChartData = {
-    labels: ['Makan', 'Transport', 'Tagihan', 'Belanja', 'Hiburan'],
-    datasets: [{
-        label: 'Total Pengeluaran',
-        data: [4500000, 1200000, 2500000, 2000000, 1300000],
-        backgroundColor: [
-            '#3b82f6', // blue-500
-            '#f59e0b', // amber-500
-            '#ef4444', // red-500
-            '#8b5cf6', // violet-500
-            '#10b981'  // emerald-500
-        ],
-        borderRadius: 4
-    }]
 };
 
 const categoryChartOptions = {
@@ -110,25 +69,22 @@ const categoryChartOptions = {
             <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 space-y-8">
                 
                 <!-- Header & Filters -->
-                <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-2">
-                    <div>
-                        <h1 class="text-3xl font-bold text-slate-900 dark:text-slate-50">Laporan & Analitik</h1>
-                        <p class="mt-1 text-slate-500 dark:text-slate-400">Analisa mendalam mengenai tren arus kas dan kebiasaan finansial keluarga.</p>
+                <div class="flex items-center gap-3 w-full md:w-auto">
+                    <div class="relative min-w-[180px]">
+                        <select @change="applyFilter" v-model="timeFilter" class="w-full pl-10 pr-8 py-2.5 text-sm font-medium border-slate-200 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-800 shadow-sm focus:ring-royal-500 focus:border-royal-500 text-slate-700 dark:text-slate-200 appearance-none">
+                            <option v-for="opt in timeOptions" :key="opt" :value="opt">{{ opt }}</option>
+                        </select>
+                        <Calendar class="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-royal-500 pointer-events-none" />
                     </div>
                     
-                    <div class="flex items-center gap-3 w-full md:w-auto">
-                        <div class="relative min-w-[180px]">
-                            <select v-model="timeFilter" class="w-full pl-10 pr-8 py-2.5 text-sm font-medium border-slate-200 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-800 shadow-sm focus:ring-royal-500 focus:border-royal-500 text-slate-700 dark:text-slate-200 appearance-none">
-                                <option v-for="opt in timeOptions" :key="opt" :value="opt">{{ opt }}</option>
-                            </select>
-                            <Calendar class="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-royal-500 pointer-events-none" />
-                        </div>
-                        
-                        <button class="flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-700 transition shadow-sm">
-                            <Download class="w-4 h-4" />
-                            <span class="hidden sm:inline">Export PDF/Excel</span>
-                        </button>
-                    </div>
+                    <a 
+                        :href="route('reports.export-pdf', { filter: timeFilter })" 
+                        target="_blank"
+                        class="flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-700 transition shadow-sm cursor-pointer"
+                    >
+                        <Download class="w-4 h-4" />
+                        <span class="hidden sm:inline">Export PDF</span>
+                    </a>
                 </div>
 
                 <!-- Strategic Metrics Cards -->
@@ -139,7 +95,7 @@ const categoryChartOptions = {
                         </div>
                         <div>
                             <p class="text-sm font-medium text-slate-500 dark:text-slate-400">Rata-rata Pengeluaran Harian</p>
-                            <p class="text-2xl font-bold text-slate-800 dark:text-slate-100 mt-1">{{ maskValue(IDR.format(metrics.avgDailyExpense)) }}</p>
+                            <p class="text-2xl font-bold text-slate-800 dark:text-slate-100 mt-1">{{ maskValue(IDR.format(props.metrics?.avgDailyExpense || 0)) }}</p>
                             <p class="text-xs text-rose-500 mt-1 flex items-center gap-1">
                                 <TrendingUp class="w-3 h-3" />
                                 +12% dari bulan lalu
@@ -153,7 +109,7 @@ const categoryChartOptions = {
                         </div>
                         <div>
                             <p class="text-sm font-medium text-slate-500 dark:text-slate-400">Selisih Kas Bersih (Net Cashflow)</p>
-                            <p class="text-2xl font-bold text-slate-800 dark:text-slate-100 mt-1">{{ maskValue(IDR.format(metrics.cashflowDifference)) }}</p>
+                            <p class="text-2xl font-bold text-slate-800 dark:text-slate-100 mt-1">{{ maskValue(IDR.format(props.metrics?.cashflowDifference || 0)) }}</p>
                             <p class="text-xs text-emerald-500 mt-1 flex items-center gap-1">
                                 Sisa uang menganggur yang bisa ditabung
                             </p>
@@ -166,8 +122,8 @@ const categoryChartOptions = {
                         </div>
                         <div>
                             <p class="text-sm font-medium text-slate-500 dark:text-slate-400">Transaksi Terbesar</p>
-                            <p class="text-xl font-bold text-slate-800 dark:text-slate-100 mt-1 truncate" :title="metrics.largestTransaction.name">{{ metrics.largestTransaction.name }}</p>
-                            <p class="text-sm font-semibold text-rose-600 dark:text-rose-400 mt-0.5">{{ maskValue(IDR.format(metrics.largestTransaction.amount)) }}</p>
+                            <p class="text-xl font-bold text-slate-800 dark:text-slate-100 mt-1 truncate" :title="props.metrics?.largestTransaction?.name">{{ props.metrics?.largestTransaction?.name }}</p>
+                            <p class="text-sm font-semibold text-rose-600 dark:text-rose-400 mt-0.5">{{ maskValue(IDR.format(props.metrics?.largestTransaction?.amount || 0)) }}</p>
                         </div>
                     </div>
                 </div>
@@ -184,7 +140,7 @@ const categoryChartOptions = {
                             </div>
                         </div>
                         <div class="h-[300px] w-full">
-                            <Line :data="trendChartData" :options="trendChartOptions" />
+                            <Line v-if="props.trendChartData" :data="props.trendChartData" :options="trendChartOptions" />
                         </div>
                     </div>
                     
@@ -197,7 +153,7 @@ const categoryChartOptions = {
                             </div>
                         </div>
                         <div class="h-[300px] w-full">
-                            <Bar :data="categoryChartData" :options="categoryChartOptions" />
+                            <Bar v-if="props.categoryChartData" :data="props.categoryChartData" :options="categoryChartOptions" />
                         </div>
                     </div>
 

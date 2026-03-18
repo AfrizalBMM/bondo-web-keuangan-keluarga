@@ -109,4 +109,42 @@ class GoalController extends Controller
 
         return redirect()->back()->with('success', 'Setoran berhasil ditambahkan ke target');
     }
+
+    public function update(Request $request, Goal $goal)
+    {
+        if ($goal->family_id !== $request->user()->family_id) {
+            abort(403);
+        }
+
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'targetAmount' => 'required|numeric|min:1',
+            'targetDate' => 'required|date',
+            'color' => 'required|string',
+        ]);
+
+        $goal->update([
+            'name' => $validated['name'],
+            'target_amount' => $validated['targetAmount'],
+            'target_date' => $validated['targetDate'],
+            'color' => $validated['color'],
+        ]);
+
+        FamilyDataUpdated::dispatch($request->user()->family_id);
+
+        return redirect()->back()->with('success', 'Target keuangan berhasil diperbarui');
+    }
+
+    public function destroy(Request $request, Goal $goal)
+    {
+        if ($goal->family_id !== $request->user()->family_id) {
+            abort(403);
+        }
+
+        $goal->delete();
+
+        FamilyDataUpdated::dispatch($request->user()->family_id);
+
+        return redirect()->back()->with('success', 'Target keuangan berhasil dihapus');
+    }
 }

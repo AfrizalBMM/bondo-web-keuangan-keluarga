@@ -17,7 +17,10 @@ return Application::configure(basePath: dirname(__DIR__))
             \Illuminate\Http\Middleware\AddLinkHeadersForPreloadedAssets::class,
         ]);
 
-        //
+        // REVISI: Tambahkan Alias Middleware di sini
+        $middleware->alias([
+            'has_family' => \App\Http\Middleware\EnsureHasFamily::class,
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //

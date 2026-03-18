@@ -1,6 +1,6 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
-import { Head, useForm } from '@inertiajs/vue3';
+import { Head, useForm, router } from '@inertiajs/vue3';
 import { useVisibility } from '@/Composables/useVisibility';
 import { ref, computed } from 'vue';
 import { Plus, Edit2, Trash2, Home, Car, Gem, Briefcase, TrendingDown, ArrowDownRight, X, Type, Tags, CalendarDays, CircleDollarSign } from 'lucide-vue-next';
@@ -22,6 +22,7 @@ const IDR = new Intl.NumberFormat('id-ID', {
 });
 
 const isAddModalOpen = ref(false);
+const editingAssetId = ref(null);
 
 const form = useForm({
     name: '',
@@ -60,14 +61,50 @@ const totalAssetValue = computed(() => {
     return props.assets.reduce((acc, curr) => acc + getCurrentValue(curr), 0);
 });
 
+const openAddModal = () => {
+    editingAssetId.value = null;
+    form.reset();
+    form.clearErrors();
+    isAddModalOpen.value = true;
+};
+
+const openEditModal = (asset) => {
+    editingAssetId.value = asset.id;
+    form.name = asset.name;
+    form.type = asset.type;
+    form.initialValue = asset.initialValue;
+    form.purchaseDate = asset.purchaseDate;
+    form.depreciationRate = asset.depreciationRate;
+    form.clearErrors();
+    isAddModalOpen.value = true;
+};
+
+const deleteAsset = (id) => {
+    if (confirm('Apakah Anda yakin ingin menghapus aset ini?')) {
+        router.delete(route('assets.destroy', id), {
+            preserveScroll: true
+        });
+    }
+};
+
 const submitAddAsset = () => {
-    form.post(route('assets.store'), {
-        preserveScroll: true,
-        onSuccess: () => {
-            isAddModalOpen.value = false;
-            form.reset();
-        }
-    });
+    if (editingAssetId.value) {
+        form.put(route('assets.update', editingAssetId.value), {
+            preserveScroll: true,
+            onSuccess: () => {
+                isAddModalOpen.value = false;
+                form.reset();
+            }
+        });
+    } else {
+        form.post(route('assets.store'), {
+            preserveScroll: true,
+            onSuccess: () => {
+                isAddModalOpen.value = false;
+                form.reset();
+            }
+        });
+    }
 };
 </script>
 
@@ -89,7 +126,7 @@ const submitAddAsset = () => {
                             <p class="text-sm font-medium text-slate-500 dark:text-slate-400">Total Estimasi Aset</p>
                             <p class="text-xl font-bold text-royal-600 dark:text-royal-400">{{ maskValue(IDR.format(totalAssetValue)) }}</p>
                         </div>
-                        <PrimaryButton @click="isAddModalOpen = true" class="bg-royal-600 hover:bg-royal-700">
+                        <PrimaryButton @click="openAddModal" class="bg-royal-600 hover:bg-royal-700">
                             <Plus class="w-4 h-4 mr-2" />
                             Tambah
                         </PrimaryButton>
@@ -111,8 +148,11 @@ const submitAddAsset = () => {
                                 </div>
                             </div>
                             <div class="flex opacity-0 group-hover:opacity-100 transition-opacity">
-                                <button class="p-1.5 text-slate-400 hover:text-royal-600 dark:hover:text-royal-400" title="Edit">
+                                <button @click="openEditModal(asset)" class="p-1.5 text-slate-400 hover:text-royal-600 dark:hover:text-royal-400" title="Edit">
                                     <Edit2 class="w-4 h-4" />
+                                </button>
+                                <button @click="deleteAsset(asset.id)" class="p-1.5 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 transition" title="Hapus">
+                                    <Trash2 class="w-4 h-4" />
                                 </button>
                             </div>
                         </div>
@@ -144,7 +184,7 @@ const submitAddAsset = () => {
                     </div>
 
                     <!-- Empty State Add Button -->
-                    <button @click="isAddModalOpen = true" class="rounded-2xl border-2 border-dashed border-slate-300 dark:border-slate-700 flex flex-col items-center justify-center p-6 min-h-[250px] hover:border-royal-500 hover:bg-royal-50 dark:hover:bg-royal-900/20 transition-all text-slate-500 hover:text-royal-600 dark:text-slate-400 dark:hover:text-royal-400 group">
+                    <button @click="openAddModal" class="rounded-2xl border-2 border-dashed border-slate-300 dark:border-slate-700 flex flex-col items-center justify-center p-6 min-h-[250px] hover:border-royal-500 hover:bg-royal-50 dark:hover:bg-royal-900/20 transition-all text-slate-500 hover:text-royal-600 dark:text-slate-400 dark:hover:text-royal-400 group">
                         <div class="w-12 h-12 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center mb-3 group-hover:bg-royal-100 dark:group-hover:bg-royal-900/50 transition-colors">
                             <Plus class="w-6 h-6" />
                         </div>
@@ -161,7 +201,7 @@ const submitAddAsset = () => {
             
             <div class="relative bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden transform transition-all">
                 <div class="px-6 py-4 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center bg-slate-50/50 dark:bg-slate-800/80">
-                    <h3 class="text-lg font-bold text-slate-900 dark:text-white">Tambah Aset Baru</h3>
+                    <h3 class="text-lg font-bold text-slate-900 dark:text-white">{{ editingAssetId ? 'Edit Aset' : 'Tambah Aset Baru' }}</h3>
                     <button @click="isAddModalOpen = false" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300">
                         <X class="w-5 h-5" />
                     </button>
@@ -218,7 +258,7 @@ const submitAddAsset = () => {
 
                     <div class="mt-8 flex justify-end gap-3 border-t border-slate-100 dark:border-slate-700 pt-5">
                         <button type="button" @click="isAddModalOpen = false" class="px-4 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-md transition-colors">Batal</button>
-                        <PrimaryButton type="submit" :class="{ 'opacity-25': form.processing }" :disabled="form.processing" class="bg-royal-600 hover:bg-royal-700">Simpan Aset</PrimaryButton>
+                        <PrimaryButton type="submit" :class="{ 'opacity-25': form.processing }" :disabled="form.processing" class="bg-royal-600 hover:bg-royal-700">{{ editingAssetId ? 'Simpan Perubahan' : 'Simpan Aset' }}</PrimaryButton>
                     </div>
                 </form>
             </div>

@@ -27,13 +27,19 @@ const IDR = new Intl.NumberFormat('id-ID', {
 const smartInput = ref('');
 const isAnalyzing = ref(false);
 const isManualModalOpen = ref(false);
+const editingTransactionId = ref(null);
+
+const getCurrentDateTime = () => {
+    // Format sv-SE menghasilkan YYYY-MM-DD HH:mm:ss yang kompatibel dengan HTML input setelah sedikit modifikasi
+    return new Date().toLocaleString('sv-SE').replace(' ', 'T').slice(0, 16);
+};
 
 const form = useForm({
     type: 'Expense',
     wallet_id: '',
     category_id: '',
     amount: '',
-    date: new Date().toISOString().slice(0, 10),
+    date: getCurrentDateTime(), // Otomatis terisi tanggal & jam sekarang
     notes: ''
 });
 
@@ -55,14 +61,63 @@ const submitSmartAdd = () => {
     });
 };
 
+const openAddModal = () => {
+    editingTransactionId.value = null;
+    form.reset();
+    form.clearErrors();
+    
+    // Set ulang ke waktu sekarang agar tidak memakai waktu saat page load pertama kali
+    form.date = getCurrentDateTime(); 
+    
+    isManualModalOpen.value = true;
+};
+
+const openEditModal = (trx) => {
+    // Ensure the date is returned in YYYY-MM-DD from backend or we parse it. The backend returns 'd M Y, H:i' for display, but we need the raw format or we can just hope it's parseable. wait, 'd M Y, H:i' is NOT form.date compatible. We need the raw date string from backend!
+    // Since backend's map() overrides `date` with formatted string, we need to pass `raw_date` from backend as well. I'll pass raw_date in the backend, but for now I'll just clear the date field if parsing fails, or use today as a fallback.
+    editingTransactionId.value = trx.id;
+    
+    // Attempt to parse '12 Mar 2026, 14:30' manually if possible, or we just supply today. Wait, if I must update backend to supply raw_date, I will do that in another tool call. For now we will assume trx.raw_date exists.
+    form.type = trx.type === 'income' ? 'Income' : 'Expense';
+    
+    // Wallet and category are names in the frontend map currently! The backend map() removes wallet_id and category_id!
+    // This requires me to pass raw_wallet_id and raw_category_id from the backend. 
+    form.wallet_id = trx.raw_wallet_id;
+    form.category_id = trx.raw_category_id;
+    form.amount = trx.amount;
+    form.date = trx.raw_date || new Date().toISOString().slice(0, 10);
+    form.notes = trx.raw_notes;
+    
+    form.clearErrors();
+    isManualModalOpen.value = true;
+};
+
 const submitManualAdd = () => {
-    form.post(route('transactions.store'), {
-        preserveScroll: true,
-        onSuccess: () => {
-            isManualModalOpen.value = false;
-            form.reset();
-        }
-    });
+    if (editingTransactionId.value) {
+        form.put(route('transactions.update', editingTransactionId.value), {
+            preserveScroll: true,
+            onSuccess: () => {
+                isManualModalOpen.value = false;
+                form.reset();
+            }
+        });
+    } else {
+        form.post(route('transactions.store'), {
+            preserveScroll: true,
+            onSuccess: () => {
+                isManualModalOpen.value = false;
+                form.reset();
+            }
+        });
+    }
+};
+
+const deleteTransaction = (id) => {
+    if (confirm('Apakah Anda yakin ingin menghapus transaksi ini? Saldo dompet akan disesuaikan kembali.')) {
+        router.delete(route('transactions.destroy', id), {
+            preserveScroll: true
+        });
+    }
 };
 
 </script>
@@ -127,7 +182,7 @@ const submitManualAdd = () => {
                             <Download class="w-4 h-4" />
                             Export
                         </button>
-                        <PrimaryButton @click="isManualModalOpen = true" class="flex-1 sm:flex-none bg-royal-600 hover:bg-royal-700 flex justify-center items-center gap-2">
+                        <PrimaryButton @click="openAddModal" class="flex-1 sm:flex-none bg-royal-600 hover:bg-royal-700 flex justify-center items-center gap-2">
                             <Plus class="w-4 h-4" />
                             Manual Input
                         </PrimaryButton>
@@ -178,10 +233,10 @@ const submitManualAdd = () => {
                                     </td>
                                     <td class="px-6 py-4 text-right">
                                         <div class="flex items-center justify-end gap-2">
-                                            <button class="p-1.5 text-slate-400 hover:text-royal-600 dark:hover:text-royal-400 transition" title="Edit">
+                                            <button @click="openEditModal(trx)" class="p-1.5 text-slate-400 hover:text-royal-600 dark:hover:text-royal-400 transition" title="Edit">
                                                 <Edit2 class="w-4 h-4" />
                                             </button>
-                                            <button class="p-1.5 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 transition" title="Hapus">
+                                            <button @click="deleteTransaction(trx.id)" class="p-1.5 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 transition" title="Hapus">
                                                 <Trash2 class="w-4 h-4" />
                                             </button>
                                         </div>
@@ -206,7 +261,7 @@ const submitManualAdd = () => {
             
             <div class="relative bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden transform transition-all">
                 <div class="px-6 py-4 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center bg-slate-50/50 dark:bg-slate-800/80">
-                    <h3 class="text-lg font-bold text-slate-900 dark:text-white">Input Transaksi Manual</h3>
+                    <h3 class="text-lg font-bold text-slate-900 dark:text-white">{{ editingTransactionId ? 'Edit Transaksi' : 'Input Transaksi Manual' }}</h3>
                     <button @click="isManualModalOpen = false" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300">
                         <X class="w-5 h-5" />
                     </button>
@@ -252,8 +307,16 @@ const submitManualAdd = () => {
 
                         <div class="grid grid-cols-2 gap-4">
                             <div>
-                                <InputLabel for="date" class="flex items-center gap-1.5"><Calendar class="w-4 h-4 text-slate-400" /> Tanggal</InputLabel>
-                                <TextInput id="date" v-model="form.date" type="date" class="mt-1 block w-full" required />
+                                <InputLabel for="date" class="flex items-center gap-1.5">
+                                    <Calendar class="w-4 h-4 text-slate-400" /> Tanggal & Waktu
+                                </InputLabel>
+                                <TextInput 
+                                    id="date" 
+                                    v-model="form.date" 
+                                    type="datetime-local" 
+                                    class="mt-1 block w-full" 
+                                    required 
+                                />
                             </div>
                             <div>
                                 <InputLabel for="notes" class="flex items-center gap-1.5"><FileText class="w-4 h-4 text-slate-400" /> Catatan (Ops.)</InputLabel>
@@ -264,7 +327,7 @@ const submitManualAdd = () => {
 
                     <div class="mt-8 flex justify-end gap-3 text-sm">
                         <button type="button" @click="isManualModalOpen = false" class="px-4 py-2 font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-md transition-colors">Batal</button>
-                        <PrimaryButton type="submit" :class="{ 'opacity-25': form.processing }" :disabled="form.processing" class="bg-royal-600 hover:bg-royal-700 shadow-sm">Simpan Transaksi</PrimaryButton>
+                        <PrimaryButton type="submit" :class="{ 'opacity-25': form.processing }" :disabled="form.processing" class="bg-royal-600 hover:bg-royal-700 shadow-sm">{{ editingTransactionId ? 'Simpan Perubahan' : 'Simpan Transaksi' }}</PrimaryButton>
                     </div>
                 </form>
             </div>

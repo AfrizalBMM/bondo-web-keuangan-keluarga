@@ -1,9 +1,9 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
-import { Head, useForm } from '@inertiajs/vue3';
+import { Head, useForm, router } from '@inertiajs/vue3';
 import { useVisibility } from '@/Composables/useVisibility';
 import { ref, computed } from 'vue';
-import { Plus, Target, CheckCircle2, TrendingUp, X, Flag, CircleDollarSign, CalendarDays, Palette, Focus, Wallet } from 'lucide-vue-next';
+import { Plus, Target, CheckCircle2, TrendingUp, X, Flag, CircleDollarSign, CalendarDays, Palette, Edit2, Trash2, Wallet } from 'lucide-vue-next';
 import PrimaryButton from '@/Components/PrimaryButton.vue';
 import TextInput from '@/Components/TextInput.vue';
 import InputLabel from '@/Components/InputLabel.vue';
@@ -25,6 +25,7 @@ const IDR = new Intl.NumberFormat('id-ID', {
 const isAddModalOpen = ref(false);
 const isDepositModalOpen = ref(false);
 const activeGoal = ref(null);
+const editingGoalId = ref(null);
 
 const form = useForm({
     name: '',
@@ -58,14 +59,49 @@ const openDepositModal = (goal) => {
     isDepositModalOpen.value = true;
 };
 
+const openAddModal = () => {
+    editingGoalId.value = null;
+    form.reset();
+    form.clearErrors();
+    isAddModalOpen.value = true;
+};
+
+const openEditModal = (goal) => {
+    editingGoalId.value = goal.id;
+    form.name = goal.name;
+    form.targetAmount = goal.targetAmount;
+    form.targetDate = goal.targetDate;
+    form.color = goal.color;
+    form.clearErrors();
+    isAddModalOpen.value = true;
+};
+
+const deleteGoal = (id) => {
+    if (confirm('Apakah Anda yakin ingin menghapus target beserta riwayat progresnya?')) {
+        router.delete(route('goals.destroy', id), {
+            preserveScroll: true
+        });
+    }
+};
+
 const submitAddGoal = () => {
-    form.post(route('goals.store'), {
-        preserveScroll: true,
-        onSuccess: () => {
-            isAddModalOpen.value = false;
-            form.reset();
-        }
-    });
+    if (editingGoalId.value) {
+        form.put(route('goals.update', editingGoalId.value), {
+            preserveScroll: true,
+            onSuccess: () => {
+                isAddModalOpen.value = false;
+                form.reset();
+            }
+        });
+    } else {
+        form.post(route('goals.store'), {
+            preserveScroll: true,
+            onSuccess: () => {
+                isAddModalOpen.value = false;
+                form.reset();
+            }
+        });
+    }
 };
 
 const submitDeposit = () => {
@@ -95,7 +131,7 @@ const submitDeposit = () => {
                         <h1 class="text-3xl font-bold text-slate-900 dark:text-slate-50">Financial Goals</h1>
                         <p class="mt-1 text-slate-500 dark:text-slate-400">Rencanakan dan pantau progres tabungan masa depan keluarga.</p>
                     </div>
-                    <PrimaryButton @click="isAddModalOpen = true" class="bg-royal-600 hover:bg-royal-700">
+                    <PrimaryButton @click="openAddModal" class="bg-royal-600 hover:bg-royal-700">
                         <Plus class="w-4 h-4 mr-2" />
                         Target Baru
                     </PrimaryButton>
@@ -146,10 +182,10 @@ const submitDeposit = () => {
 
                         <div class="relative z-10 mt-6 pt-5 border-t border-slate-100 dark:border-slate-700/50 flex justify-between items-center">
                             <div class="flex gap-2">
-                                <button class="p-2 text-slate-400 hover:text-royal-600 dark:hover:text-royal-400 transition bg-slate-50 hover:bg-royal-50 dark:bg-slate-800 dark:hover:bg-royal-900/30 rounded-lg">
+                                <button @click="openEditModal(goal)" class="p-2 text-slate-400 hover:text-royal-600 dark:hover:text-royal-400 transition bg-slate-50 hover:bg-royal-50 dark:bg-slate-800 dark:hover:bg-royal-900/30 rounded-lg">
                                     <Edit2 class="w-4 h-4" />
                                 </button>
-                                <button class="p-2 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 transition bg-slate-50 hover:bg-rose-50 dark:bg-slate-800 dark:hover:bg-rose-900/30 rounded-lg">
+                                <button @click="deleteGoal(goal.id)" class="p-2 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 transition bg-slate-50 hover:bg-rose-50 dark:bg-slate-800 dark:hover:bg-rose-900/30 rounded-lg">
                                     <Trash2 class="w-4 h-4" />
                                 </button>
                             </div>
@@ -174,7 +210,7 @@ const submitDeposit = () => {
             
             <div class="relative bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-md overflow-hidden transform transition-all">
                 <div class="px-6 py-4 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center bg-slate-50/50 dark:bg-slate-800/80">
-                    <h3 class="text-lg font-bold text-slate-900 dark:text-white">Buat Target Baru</h3>
+                    <h3 class="text-lg font-bold text-slate-900 dark:text-white">{{ editingGoalId ? 'Edit Target' : 'Buat Target Baru' }}</h3>
                     <button @click="isAddModalOpen = false" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300">
                         <X class="w-5 h-5" />
                     </button>
@@ -213,7 +249,7 @@ const submitDeposit = () => {
 
                     <div class="mt-8 flex justify-end gap-3 text-sm border-t border-slate-100 dark:border-slate-700 pt-5">
                         <button type="button" @click="isAddModalOpen = false" class="px-4 py-2 font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-md transition-colors">Batal</button>
-                        <PrimaryButton type="submit" :class="{ 'opacity-25': form.processing }" :disabled="form.processing" class="bg-royal-600 hover:bg-royal-700">Simpan Target</PrimaryButton>
+                        <PrimaryButton type="submit" :class="{ 'opacity-25': form.processing }" :disabled="form.processing" class="bg-royal-600 hover:bg-royal-700">{{ editingGoalId ? 'Simpan Perubahan' : 'Simpan Target' }}</PrimaryButton>
                     </div>
                 </form>
             </div>

@@ -49,4 +49,44 @@ class CategoryController extends Controller
 
         return redirect()->back()->with('success', 'Kategori berhasil ditambahkan');
     }
+
+    public function update(Request $request, Category $category)
+    {
+        if ($category->family_id !== $request->user()->family_id) {
+            abort(403);
+        }
+
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'type' => 'required|in:Pemasukan,Pengeluaran',
+            'color' => 'required|string',
+        ]);
+
+        $category->update([
+            'name' => $validated['name'],
+            'type' => $validated['type'] === 'Pemasukan' ? 'Income' : 'Expense',
+            'color' => $validated['color'],
+        ]);
+
+        FamilyDataUpdated::dispatch($request->user()->family_id);
+
+        return redirect()->back()->with('success', 'Kategori berhasil diperbarui');
+    }
+
+    public function destroy(Request $request, Category $category)
+    {
+        if ($category->family_id !== $request->user()->family_id) {
+            abort(403);
+        }
+
+        if ($category->transactions()->count() > 0) {
+            return redirect()->back()->with('error', 'Gagal: Kategori masih memiliki transaksi terkait.');
+        }
+
+        $category->delete();
+
+        FamilyDataUpdated::dispatch($request->user()->family_id);
+
+        return redirect()->back()->with('success', 'Kategori berhasil dihapus');
+    }
 }

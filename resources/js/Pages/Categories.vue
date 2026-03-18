@@ -1,6 +1,6 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
-import { Head, useForm } from '@inertiajs/vue3';
+import { Head, useForm, router } from '@inertiajs/vue3';
 import { ref, computed } from 'vue';
 import { Plus, Edit2, Trash2, Tag, ArrowUpRight, ArrowDownRight, X, Check, Type, Palette } from 'lucide-vue-next';
 import PrimaryButton from '@/Components/PrimaryButton.vue';
@@ -13,6 +13,7 @@ const props = defineProps({
 
 const isAddModalOpen = ref(false);
 const activeTab = ref('Pengeluaran'); // 'Pengeluaran' or 'Pemasukan'
+const editingCategoryId = ref(null);
 
 const form = useForm({
     name: '',
@@ -46,21 +47,51 @@ const IDR = new Intl.NumberFormat('id-ID', {
 });
 
 const submitAddCategory = () => {
-    form.post(route('categories.store'), {
-        preserveScroll: true,
-        onSuccess: () => {
-            isAddModalOpen.value = false;
-            form.reset();
-        }
-    });
+    if (editingCategoryId.value) {
+        form.put(route('categories.update', editingCategoryId.value), {
+            preserveScroll: true,
+            onSuccess: () => {
+                isAddModalOpen.value = false;
+                form.reset();
+            }
+        });
+    } else {
+        form.post(route('categories.store'), {
+            preserveScroll: true,
+            onSuccess: () => {
+                isAddModalOpen.value = false;
+                form.reset();
+            }
+        });
+    }
 };
 
 const openAddModal = (type = null) => {
+    form.reset();
+    form.clearErrors();
+    editingCategoryId.value = null;
     if (type) {
         form.type = type;
-        form.color = type === 'Pemasukan' ? 'bg-emerald-500' : 'bg-rose-500';
+        form.color = type === 'Pemasukan' ? 'emerald' : 'rose';
     }
     isAddModalOpen.value = true;
+};
+
+const openEditModal = (category) => {
+    editingCategoryId.value = category.id;
+    form.name = category.name;
+    form.type = category.type;
+    form.color = category.color;
+    form.clearErrors();
+    isAddModalOpen.value = true;
+};
+
+const deleteCategory = (id) => {
+    if (confirm('Apakah Anda yakin ingin menghapus kategori ini? Kategori yang memiliki transaksi tidak dapat dihapus.')) {
+        router.delete(route('categories.destroy', id), {
+            preserveScroll: true
+        });
+    }
 };
 </script>
 
@@ -145,10 +176,10 @@ const openAddModal = (type = null) => {
                                                 </div>
                                             </div>
                                             <div class="flex opacity-0 group-hover:opacity-100 transition-opacity">
-                                                <button class="p-1.5 text-slate-400 hover:text-royal-600 dark:hover:text-royal-400 transition" title="Edit">
+                                                <button @click="openEditModal(category)" class="p-1.5 text-slate-400 hover:text-royal-600 dark:hover:text-royal-400 transition" title="Edit">
                                                     <Edit2 class="w-4 h-4" />
                                                 </button>
-                                                <button class="p-1.5 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 transition" title="Hapus">
+                                                <button @click="deleteCategory(category.id)" class="p-1.5 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 transition" title="Hapus">
                                                     <Trash2 class="w-4 h-4" />
                                                 </button>
                                             </div>
@@ -181,7 +212,7 @@ const openAddModal = (type = null) => {
             
             <div class="relative bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-md overflow-hidden transform transition-all">
                 <div class="px-6 py-4 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center bg-slate-50/50 dark:bg-slate-800/80">
-                    <h3 class="text-lg font-bold text-slate-900 dark:text-white">Tambah Kategori</h3>
+                    <h3 class="text-lg font-bold text-slate-900 dark:text-white">{{ editingCategoryId ? 'Edit Kategori' : 'Tambah Kategori' }}</h3>
                     <button @click="isAddModalOpen = false" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300">
                         <X class="w-5 h-5" />
                     </button>
@@ -226,7 +257,7 @@ const openAddModal = (type = null) => {
 
                     <div class="mt-8 flex justify-end gap-3">
                         <button type="button" @click="isAddModalOpen = false" class="px-4 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-md transition-colors">Batal</button>
-                        <PrimaryButton type="submit" :class="{ 'opacity-25': form.processing }" :disabled="form.processing" class="bg-royal-600 hover:bg-royal-700">Simpan Kategori</PrimaryButton>
+                        <PrimaryButton type="submit" :class="{ 'opacity-25': form.processing }" :disabled="form.processing" class="bg-royal-600 hover:bg-royal-700">{{ editingCategoryId ? 'Simpan Perubahan' : 'Simpan Kategori' }}</PrimaryButton>
                     </div>
                 </form>
             </div>

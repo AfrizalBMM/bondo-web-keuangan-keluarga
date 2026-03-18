@@ -1,9 +1,9 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
-import { Head, useForm } from '@inertiajs/vue3';
+import { Head, useForm, router } from '@inertiajs/vue3';
 import { useVisibility } from '@/Composables/useVisibility';
 import { ref, computed } from 'vue';
-import { Plus, ArrowDownRight, ArrowUpRight, Clock, CheckCircle2, AlertTriangle, AlertCircle, X, Check, User, CircleDollarSign, CalendarDays, Wallet } from 'lucide-vue-next';
+import { Plus, ArrowDownRight, ArrowUpRight, Clock, CheckCircle2, AlertTriangle, AlertCircle, X, Check, User, CircleDollarSign, CalendarDays, Wallet, Edit2, Trash2 } from 'lucide-vue-next';
 import PrimaryButton from '@/Components/PrimaryButton.vue';
 import TextInput from '@/Components/TextInput.vue';
 import InputLabel from '@/Components/InputLabel.vue';
@@ -26,6 +26,7 @@ const isAddModalOpen = ref(false);
 const isPaymentModalOpen = ref(false);
 const activeTab = ref('Hutang'); // 'Hutang' or 'Piutang'
 const activeDebt = ref(null);
+const editingDebtId = ref(null);
 
 const form = useForm({
     type: 'Hutang', // Hutang (Obligation to pay), Piutang (Right to receive)
@@ -64,9 +65,31 @@ const totalPiutang = computed(() => {
 });
 
 const openAddModal = (type = null) => {
+    editingDebtId.value = null;
     if(type) activeTab.value = type;
+    form.reset();
+    form.clearErrors();
     form.type = activeTab.value;
     isAddModalOpen.value = true;
+};
+
+const openEditModal = (debt) => {
+    editingDebtId.value = debt.id;
+    form.type = debt.type;
+    form.counterparty = debt.counterparty;
+    form.totalAmount = debt.totalAmount;
+    form.dueDate = debt.dueDate;
+    form.notes = debt.notes || '';
+    form.clearErrors();
+    isAddModalOpen.value = true;
+};
+
+const deleteDebt = (id) => {
+    if (confirm('Apakah Anda yakin ingin menghapus catatan ini beserta riwayat pembayarannya?')) {
+        router.delete(route('debts.destroy', id), {
+            preserveScroll: true
+        });
+    }
 };
 
 const openPaymentModal = (debt) => {
@@ -77,13 +100,23 @@ const openPaymentModal = (debt) => {
 };
 
 const submitAddDebt = () => {
-    form.post(route('debts.store'), {
-        preserveScroll: true,
-        onSuccess: () => {
-            isAddModalOpen.value = false;
-            form.reset();
-        }
-    });
+    if (editingDebtId.value) {
+        form.put(route('debts.update', editingDebtId.value), {
+            preserveScroll: true,
+            onSuccess: () => {
+                isAddModalOpen.value = false;
+                form.reset();
+            }
+        });
+    } else {
+        form.post(route('debts.store'), {
+            preserveScroll: true,
+            onSuccess: () => {
+                isAddModalOpen.value = false;
+                form.reset();
+            }
+        });
+    }
 };
 
 const submitPayment = () => {
@@ -179,6 +212,14 @@ const submitPayment = () => {
                                             <div v-else-if="item.status === 'warning'" class="flex items-center gap-1 text-xs font-bold text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/40 px-2 py-0.5 rounded">
                                                 <AlertTriangle class="w-3 h-3" /> Mendekati Tempo
                                             </div>
+                                            <div class="ml-auto flex gap-1">
+                                                <button @click="openEditModal(item)" class="p-1.5 text-slate-400 hover:text-royal-600 dark:hover:text-royal-400 transition" title="Edit">
+                                                    <Edit2 class="w-4 h-4" />
+                                                </button>
+                                                <button @click="deleteDebt(item.id)" class="p-1.5 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 transition" title="Hapus">
+                                                    <Trash2 class="w-4 h-4" />
+                                                </button>
+                                            </div>
                                         </div>
                                         <div class="flex items-center text-sm text-slate-500 dark:text-slate-400 gap-4">
                                             <span class="flex items-center gap-1">
@@ -237,7 +278,7 @@ const submitPayment = () => {
             
             <div class="relative bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-md overflow-hidden transform transition-all">
                 <div class="px-6 py-4 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center bg-slate-50/50 dark:bg-slate-800/80">
-                    <h3 class="text-lg font-bold text-slate-900 dark:text-white">Catat {{ form.type }} Baru</h3>
+                    <h3 class="text-lg font-bold text-slate-900 dark:text-white">{{ editingDebtId ? 'Edit Catatan ' + form.type : 'Catat ' + form.type + ' Baru' }}</h3>
                     <button @click="isAddModalOpen = false" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300">
                         <X class="w-5 h-5" />
                     </button>
@@ -269,7 +310,7 @@ const submitPayment = () => {
 
                     <div class="mt-8 flex justify-end gap-3 text-sm">
                         <button type="button" @click="isAddModalOpen = false" class="px-4 py-2 font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-md transition-colors">Batal</button>
-                        <PrimaryButton type="submit" :class="{ 'opacity-25': form.processing }" :disabled="form.processing" class="bg-royal-600 hover:bg-royal-700 shadow-sm">Simpan Catatan</PrimaryButton>
+                        <PrimaryButton type="submit" :class="{ 'opacity-25': form.processing }" :disabled="form.processing" class="bg-royal-600 hover:bg-royal-700 shadow-sm">{{ editingDebtId ? 'Simpan Perubahan' : 'Simpan Catatan' }}</PrimaryButton>
                     </div>
                 </form>
             </div>

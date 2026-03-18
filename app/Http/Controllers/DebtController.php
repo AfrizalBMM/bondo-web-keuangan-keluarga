@@ -127,4 +127,44 @@ class DebtController extends Controller
 
         return redirect()->back()->with('success', 'Pembayaran berhasil dicatat');
     }
+
+    public function update(Request $request, Debt $debt)
+    {
+        if ($debt->family_id !== $request->user()->family_id) {
+            abort(403);
+        }
+
+        $validated = $request->validate([
+            'type' => 'required|in:Hutang,Piutang',
+            'counterparty' => 'required|string|max:255',
+            'totalAmount' => 'required|numeric|min:1',
+            'dueDate' => 'required|date',
+            'notes' => 'nullable|string|max:255',
+        ]);
+
+        $debt->update([
+            'type' => $validated['type'],
+            'counterparty' => $validated['counterparty'],
+            'total_amount' => $validated['totalAmount'],
+            'due_date' => $validated['dueDate'],
+            'notes' => $validated['notes'] ?? '',
+        ]);
+
+        FamilyDataUpdated::dispatch($request->user()->family_id);
+
+        return redirect()->back()->with('success', 'Catatan Hutang/Piutang berhasil diperbarui');
+    }
+
+    public function destroy(Request $request, Debt $debt)
+    {
+        if ($debt->family_id !== $request->user()->family_id) {
+            abort(403);
+        }
+
+        $debt->delete();
+
+        FamilyDataUpdated::dispatch($request->user()->family_id);
+
+        return redirect()->back()->with('success', 'Catatan Hutang/Piutang berhasil dihapus');
+    }
 }

@@ -19,7 +19,7 @@ return new class extends Migration
             $table->foreignId('user_id')->constrained('users')->onDelete('cascade'); // Who recorded it
             $table->string('type'); // Income, Expense, Transfer
             $table->decimal('amount', 15, 2);
-            $table->date('date');
+            $table->timestamp('date');
             $table->string('notes')->nullable();
             $table->timestamps();
         });

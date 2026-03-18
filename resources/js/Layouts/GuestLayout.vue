@@ -56,7 +56,7 @@ import { Wallet, ShieldCheck, TrendingUp, Sparkles, Activity } from 'lucide-vue-
                 </div>
 
                 <h1 class="text-4xl font-extrabold tracking-tight mb-4 text-transparent bg-clip-text bg-gradient-to-r from-white to-royalblue-200">
-                    Family Finance Hub
+                    Bondo - Keuangan Keluarga 
                 </h1>
                 <p class="text-lg text-royalblue-100/80 max-w-md font-medium">
                     Kolaborasi finansial yang elegan, aman, dan transparan untuk keluarga modern.
@@ -82,7 +82,7 @@ import { Wallet, ShieldCheck, TrendingUp, Sparkles, Activity } from 'lucide-vue-
                 </div>
                 
                 <p class="mt-8 text-center text-sm text-slate-500 dark:text-slate-400">
-                    &copy; 2026 Family Finance Hub. All rights reserved.
+                    &copy; 2026 Bondo. All rights reserved. - Powered by Reditech
                 </p>
             </div>
         </div>
