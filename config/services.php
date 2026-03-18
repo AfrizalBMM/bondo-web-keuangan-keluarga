@@ -35,4 +35,9 @@ return [
         ],
     ],
 
+    'groq' => [
+        'key' => env('GROQ_API_KEY'),
+        'model' => 'llama-3.3-70b-versatile', // Model terbaik & stabil saat ini
+    ],
+
 ];

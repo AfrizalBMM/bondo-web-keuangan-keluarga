@@ -12,6 +12,7 @@ use App\Http\Controllers\BudgetController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\PushNotificationController;
+use App\Http\Controllers\SmartAddController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
@@ -102,6 +103,8 @@ Route::middleware('auth')->group(function () {
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
     Route::delete('/profile/family/{family}', [ProfileController::class, 'destroyFamily'])->name('family.destroy');
     Route::post('/profile/family/leave', [ProfileController::class, 'leaveFamily'])->name('family.leave');
+    Route::post('/smart-add', [SmartAddController::class, 'process'])->name('smart-add.process');
+    
 });
 
 // 6. Test Route
@@ -109,5 +112,8 @@ Route::get('/test-push', function (Illuminate\Http\Request $request) {
     $request->user()->notify(new \App\Notifications\TestWebPushNotification());
     return "Push notification sent!";
 })->middleware(['auth', 'verified']);
+
+
+
 
 require __DIR__.'/auth.php';

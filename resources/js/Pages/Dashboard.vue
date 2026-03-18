@@ -16,6 +16,9 @@ import {
     Clock
 } from 'lucide-vue-next';
 
+import { Sparkles, Loader2, ArrowRight } from 'lucide-vue-next';
+import axios from 'axios';
+
 // Chart.js setup
 import { 
     Chart as ChartJS, 
@@ -50,6 +53,54 @@ const copyInviteCode = () => {
     navigator.clipboard.writeText(props.familyData?.inviteCode);
     copied.value = true;
     setTimeout(() => copied.value = false, 2000);
+};
+
+//ai
+const smartText = ref('');
+const isAnalyzing = ref(false);
+const aiResult = ref(null);
+
+const showToast = ref(false);
+const toastMessage = ref('');
+const toastData = ref(null);
+
+const handleAiAnalysis = async () => {
+    if (!smartText.value || isAnalyzing.value) return;
+    
+    isAnalyzing.value = true;
+    
+    // Pastikan toast tertutup dulu jika sebelumnya masih ada
+    showToast.value = false;
+
+    try {
+        const response = await axios.post(route('smart-add.process'), {
+            text: smartText.value
+        });
+        
+        if (response.data.success) {
+            toastData.value = response.data.data;
+            smartText.value = '';
+            
+            // Tampilkan Toast
+            showToast.value = true;
+
+            // REFRESH DATA DASHBOARD (Agar saldo & aktivitas langsung nambah)
+            router.reload({ 
+                only: ['metrics', 'recentActivities', 'doughnutData'],
+                preserveScroll: true 
+            });
+
+            // LOGIKA TUTUP OTOMATIS (4 detik)
+            setTimeout(() => {
+                showToast.value = false;
+            }, 4000);
+        }
+    } catch (error) {
+        console.error("Gagal analisa:", error);
+        alert("Gagal memproses AI. Cek koneksi atau API Key Groq.");
+    } finally {
+        isAnalyzing.value = false;
+    }
 };
 
 // Greeting & Formatting
@@ -114,17 +165,36 @@ const lineOptions = {
                         </div>
                     </div>
 
-                    <div class="w-full md:w-96 relative group">
-                        <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400 group-focus-within:text-royal-500 transition-colors">
-                            <Search class="h-5 w-5" />
+                    <div class="w-full md:w-[450px] relative group">
+                        <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                            <Sparkles v-if="!isAnalyzing" class="h-5 w-5 text-royal-500/50 group-focus-within:text-royal-500 transition-colors" />
+                            <Loader2 v-else class="h-5 w-5 animate-spin text-royal-500" />
                         </div>
+
                         <input 
+                            v-model="smartText"
+                            @keyup.enter="handleAiAnalysis"
                             type="text" 
+                            :disabled="isAnalyzing"
                             placeholder="Ketik: 'Makan siang 50rb tunai'..." 
-                            class="block w-full pl-11 pr-12 py-4 border-none rounded-2xl bg-white dark:bg-slate-800 shadow-xl shadow-royal-500/5 focus:ring-2 focus:ring-royal-500/20 text-sm transition-all text-slate-900 dark:text-slate-100 placeholder-slate-400" 
+                            class="block w-full pl-11 pr-32 py-4 border-none rounded-2xl bg-white dark:bg-slate-800 shadow-xl shadow-royal-500/5 focus:ring-2 focus:ring-royal-500/20 text-sm transition-all text-slate-900 dark:text-slate-100 placeholder-slate-400 disabled:opacity-70" 
                         />
-                        <div class="absolute inset-y-0 right-3 flex items-center">
-                            <span class="text-[10px] font-bold bg-gradient-to-r from-royal-500 to-indigo-600 text-white px-2 py-1 rounded-lg shadow-sm shadow-royal-500/40">AI MODE</span>
+
+                        <div class="absolute inset-y-0 right-2 flex items-center">
+                            <button 
+                                @click="handleAiAnalysis"
+                                :disabled="!smartText || isAnalyzing"
+                                :class="[
+                                    'flex items-center gap-2 px-3 py-2 rounded-xl font-bold text-[10px] tracking-wider transition-all shadow-sm',
+                                    smartText && !isAnalyzing 
+                                        ? 'bg-gradient-to-r from-royal-600 to-indigo-600 text-white shadow-royal-500/20 hover:scale-105 active:scale-95' 
+                                        : 'bg-slate-100 dark:bg-slate-700 text-slate-400 cursor-not-allowed'
+                                ]"
+                            >
+                                <span v-if="!isAnalyzing">ANALISA AI</span>
+                                <span v-else>PROSES...</span>
+                                <ArrowRight v-if="!isAnalyzing" class="w-3 h-3" />
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -237,11 +307,51 @@ const lineOptions = {
 
             </div>
         </div>
+
+        <Transition
+            enter-active-class="transform ease-out duration-300 transition"
+            enter-from-class="translate-y-2 opacity-0 sm:translate-y-0 sm:translate-x-2"
+            enter-to-class="translate-y-0 opacity-100 sm:translate-x-0"
+            leave-active-class="transition ease-in duration-100"
+            leave-from-class="opacity-100"
+            leave-to-class="opacity-0"
+        >
+            <div v-if="showToast" class="fixed bottom-5 right-5 z-[100] w-full max-w-sm overflow-hidden rounded-2xl bg-white dark:bg-slate-800 shadow-2xl border border-slate-100 dark:border-slate-700 pointer-events-auto">
+                <div class="p-4">
+                    <div class="flex items-start">
+                        <div class="flex-shrink-0">
+                            <CheckCircle2 class="h-6 w-6 text-emerald-500" />
+                        </div>
+                        <div class="ml-3 w-0 flex-1 pt-0.5">
+                            <p class="text-sm font-bold text-slate-900 dark:text-white">{{ toastMessage }}</p>
+                            <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                                {{ toastData?.description }} sebesar <span class="font-bold text-emerald-600">{{ formatIDR(toastData?.amount) }}</span> telah ditambahkan ke dompet {{ toastData?.wallet }}.
+                            </p>
+                        </div>
+                        <div class="ml-4 flex flex-shrink-0">
+                            <button @click="showToast = false" class="inline-flex text-slate-400 hover:text-slate-500">
+                                <span class="sr-only">Close</span>
+                                <X class="h-5 w-5" />
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class="h-1 bg-emerald-500 animate-progress"></div>
+            </div>
+        </Transition>
+
     </AuthenticatedLayout>
 </template>
 
 <style scoped>
 .glass-card {
     @apply bg-white dark:bg-slate-800 border border-slate-200/60 dark:border-slate-700/50 rounded-3xl shadow-sm;
+}
+@keyframes progress {
+    from { width: 100%; }
+    to { width: 0%; }
+}
+.animate-progress {
+    animation: progress 4s linear forwards;
 }
 </style>

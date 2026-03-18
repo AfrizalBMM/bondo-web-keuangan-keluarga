@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use App\Models\Transaction;
 use App\Models\Wallet;
 use App\Models\Category;
-use App\Services\GeminiApiService;
 use App\Events\FamilyDataUpdated;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
