@@ -29,6 +29,7 @@ class TransactionController extends Controller
             ->map(function ($trx) {
                 return [
                     'id' => $trx->id,
+                    'user_name' => $trx->user->name,
                     'text' => $trx->notes ?: ($trx->category ? $trx->category->name : 'Manual Input'),
                     'category' => $trx->category ? $trx->category->name : '-',
                     'type' => strtolower($trx->type), // 'income' or 'expense'

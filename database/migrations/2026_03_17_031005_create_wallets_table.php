@@ -15,6 +15,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('family_id')->constrained()->onDelete('cascade');
             $table->string('name'); // e.g., BCA, BNI, Dompet Tunai
+            $table->string('account_number')->nullable();
             $table->string('type'); // Bank, E-Wallet, Cash
             $table->decimal('starting_balance', 15, 2)->default(0);
             $table->string('color')->nullable(); // hex code for UI

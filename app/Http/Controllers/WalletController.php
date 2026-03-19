@@ -21,6 +21,7 @@ class WalletController extends Controller
             return [
                 'id' => $wallet->id,
                 'name' => $wallet->name,
+                'account_number' => $wallet->account_number, // <-- Tambahkan ini
                 'type' => $wallet->type,
                 'balance' => $wallet->balance,
                 'color' => $wallet->color,
@@ -37,6 +38,7 @@ class WalletController extends Controller
     {
         $validated = $request->validate([
             'name' => 'required|string|max:255',
+            'account_number' => 'nullable|string|max:50', // <-- Tambahkan ini
             'type' => 'required|string',
             'initialBalance' => 'required|numeric',
             'color' => 'required|string',
@@ -44,6 +46,7 @@ class WalletController extends Controller
 
         $request->user()->family->wallets()->create([
             'name' => $validated['name'],
+            'account_number' => $validated['account_number'], // <-- Tambahkan ini
             'type' => $validated['type'],
             'starting_balance' => $validated['initialBalance'],
             'balance' => $validated['initialBalance'],
@@ -51,7 +54,6 @@ class WalletController extends Controller
         ]);
 
         FamilyDataUpdated::dispatch($request->user()->family_id);
-
         return redirect()->back()->with('success', 'Dompet berhasil ditambahkan');
     }
 
@@ -62,22 +64,23 @@ class WalletController extends Controller
         }
 
         $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'type' => 'required|string',
-            'balance' => 'required|numeric',
-            'color' => 'required|string',
-        ]);
+                'name' => 'required|string|max:255',
+                'account_number' => 'nullable|string|max:50', // <-- Tambahkan ini
+                'type' => 'required|string',
+                'balance' => 'required|numeric',
+                'color' => 'required|string',
+            ]);
 
-        $wallet->update([
-            'name' => $validated['name'],
-            'type' => $validated['type'],
-            'balance' => $validated['balance'],
-            'color' => $validated['color'],
-        ]);
+            $wallet->update([
+                'name' => $validated['name'],
+                'account_number' => $validated['account_number'], // <-- Tambahkan ini
+                'type' => $validated['type'],
+                'balance' => $validated['balance'],
+                'color' => $validated['color'],
+            ]);
 
-        FamilyDataUpdated::dispatch($request->user()->family_id);
-
-        return redirect()->back()->with('success', 'Data dompet berhasil diperbarui');
+            FamilyDataUpdated::dispatch($request->user()->family_id);
+            return redirect()->back()->with('success', 'Data dompet berhasil diperbarui');
     }
 
     public function destroy(Request $request, Wallet $wallet)
