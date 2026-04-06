@@ -2,6 +2,7 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head, useForm, router } from '@inertiajs/vue3';
 import { ref, computed } from 'vue';
+import { useConfirm } from '@/Composables/useConfirm';
 import { Plus, Edit2, Trash2, Tag, ArrowUpRight, ArrowDownRight, X, Check, Type, Palette } from 'lucide-vue-next';
 import PrimaryButton from '@/Components/PrimaryButton.vue';
 import TextInput from '@/Components/TextInput.vue';
@@ -10,6 +11,8 @@ import InputLabel from '@/Components/InputLabel.vue';
 const props = defineProps({
     categories: Array
 });
+
+const { confirm: confirmModal } = useConfirm();
 
 const isAddModalOpen = ref(false);
 const activeTab = ref('Pengeluaran'); // 'Pengeluaran' or 'Pemasukan'
@@ -87,11 +90,16 @@ const openEditModal = (category) => {
 };
 
 const deleteCategory = (id) => {
-    if (confirm('Apakah Anda yakin ingin menghapus kategori ini? Kategori yang memiliki transaksi tidak dapat dihapus.')) {
-        router.delete(route('categories.destroy', id), {
-            preserveScroll: true
-        });
-    }
+    confirmModal({
+        title: 'Hapus Kategori?',
+        message: 'Apakah Anda yakin ingin menghapus kategori ini? Kategori yang memiliki transaksi tidak dapat dihapus.',
+        confirmText: 'Ya, Hapus',
+        onConfirm: () => {
+            router.delete(route('categories.destroy', id), {
+                preserveScroll: true
+            });
+        }
+    });
 };
 </script>
 

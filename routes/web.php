@@ -12,7 +12,6 @@ use App\Http\Controllers\BudgetController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\PushNotificationController;
-use App\Http\Controllers\SmartAddController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
@@ -47,8 +46,7 @@ Route::middleware(['auth', 'verified', 'has_family'])->group(function () {
     Route::put('/wallets/{wallet}', [WalletController::class, 'update'])->name('wallets.update');
     Route::delete('/wallets/{wallet}', [WalletController::class, 'destroy'])->name('wallets.destroy');
 
-    // Transactions & Smart Add
-    Route::post('/transactions/smart-add', [TransactionController::class, 'smartStore'])->name('transactions.smart');
+    // Transactions
     Route::get('/transactions', [TransactionController::class, 'index'])->name('transactions');
     Route::post('/transactions', [TransactionController::class, 'store'])->name('transactions.store');
     Route::put('/transactions/{transaction}', [TransactionController::class, 'update'])->name('transactions.update');
@@ -101,10 +99,10 @@ Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
-    Route::delete('/profile/family/{family}', [ProfileController::class, 'destroyFamily'])->name('family.destroy');
+    Route::patch('/profile/family', [ProfileController::class, 'updateFamily'])->name('family.update');
+    Route::delete('/profile/family', [ProfileController::class, 'destroyFamily'])->name('family.destroy');
     Route::post('/profile/family/leave', [ProfileController::class, 'leaveFamily'])->name('family.leave');
-    Route::post('/smart-add', [SmartAddController::class, 'process'])->name('smart-add.process');
-    
+    Route::delete('/profile/family/members/{user}', [ProfileController::class, 'removeMember'])->name('family.members.destroy');
 });
 
 // 6. Test Route

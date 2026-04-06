@@ -102,61 +102,6 @@ class TransactionController extends Controller
         return redirect()->back()->with('success', 'Transaksi berhasil disimpan');
     }
 
-    public function smartStore(Request $request, GeminiApiService $geminiService)
-    {
-        $validated = $request->validate([
-            'smart_input' => 'required|string|max:500',
-        ]);
-
-        $familyId = $request->user()->family_id;
-        $wallets = Wallet::where('family_id', $familyId)->select('id', 'name')->get();
-        $categories = Category::where('family_id', $familyId)->select('id', 'name')->get();
-
-        if ($wallets->isEmpty() || $categories->isEmpty()) {
-            return redirect()->back()->withErrors(['smart_input' => 'Harap buat Dompet dan Kategori terlebih dahulu sebelum menggunakan Smart Add.']);
-        }
-
-        $parsedData = $geminiService->parseTransaction($validated['smart_input'], $wallets, $categories);
-
-        if (!$parsedData || !isset($parsedData['amount'], $parsedData['wallet_id'], $parsedData['category_id'], $parsedData['type'])) {
-            return redirect()->back()->withErrors(['smart_input' => 'AI gagal memahami transaksi. Coba kalimat yang lebih spesifik (misal: "Beli cilok 5rb tunai").']);
-        }
-
-        $wallet = Wallet::where('id', $parsedData['wallet_id'])
-                        ->where('family_id', $familyId)
-                        ->first() ?? $wallets->first(); // fallback to first wallet if ID mismatch
-
-        $transaction = DB::transaction(function () use ($parsedData, $request, $wallet) {
-            $trx = Transaction::create([
-                'family_id' => $request->user()->family_id,
-                'wallet_id' => $wallet->id,
-                'category_id' => $parsedData['category_id'],
-                'user_id' => $request->user()->id,
-                'type' => $parsedData['type'],
-                'amount' => $parsedData['amount'],
-                'date' => $parsedData['date'] ?? now(),
-                'notes' => $parsedData['notes'] ?? 'Smart Add',
-            ]);
-
-            // Balance logic...
-            if ($parsedData['type'] === 'Income') {
-                $wallet->balance += $parsedData['amount'];
-            } else {
-                $wallet->balance -= $parsedData['amount'];
-            }
-            $wallet->save();
-
-            return $trx;
-        });
-
-        // KIRIM NOTIFIKASI
-        $this->sendFamilyNotification($request->user(), $transaction);
-
-        FamilyDataUpdated::dispatch($request->user()->family_id);
-
-        return redirect()->back()->with('success', 'Smart Add berhasil dicatat!');
-    }
-
     public function update(Request $request, Transaction $transaction)
     {
         if ($transaction->family_id !== $request->user()->family_id) {
@@ -247,5 +192,4 @@ class TransactionController extends Controller
             Notification::send($recipients, new TransactionCreatedNotification($transaction));
         }
     }
-
 }

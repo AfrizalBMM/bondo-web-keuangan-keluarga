@@ -1,7 +1,28 @@
 <script setup>
-import { computed, watch, ref } from 'vue';
+import { computed, watch, ref, h } from 'vue';
 import { usePage } from '@inertiajs/vue3';
-import { CheckCircle, AlertTriangle, XCircle, Info, X } from 'lucide-vue-next';
+import { X } from 'lucide-vue-next';
+
+// --- PREMIUM SVG ICONS ---
+const SuccessSVG = h('svg', { viewBox: '0 0 24 24', fill: 'none', xmlns: 'http://www.w3.org/2000/svg' }, [
+    h('circle', { cx: '12', cy: '12', r: '10', fill: 'currentColor', opacity: '0.2' }),
+    h('path', { d: 'M8 12L11 15L16 9', stroke: 'currentColor', 'stroke-width': '2', 'stroke-linecap': 'round', 'stroke-linejoin': 'round' })
+]);
+
+const ErrorSVG = h('svg', { viewBox: '0 0 24 24', fill: 'none', xmlns: 'http://www.w3.org/2000/svg' }, [
+    h('circle', { cx: '12', cy: '12', r: '10', fill: 'currentColor', opacity: '0.2' }),
+    h('path', { d: 'M15 9L9 15M9 9L15 15', stroke: 'currentColor', 'stroke-width': '2', 'stroke-linecap': 'round', 'stroke-linejoin': 'round' })
+]);
+
+const WarningSVG = h('svg', { viewBox: '0 0 24 24', fill: 'none', xmlns: 'http://www.w3.org/2000/svg' }, [
+    h('path', { d: 'M12 3L2 21H22L12 3Z', fill: 'currentColor', opacity: '0.2' }),
+    h('path', { d: 'M12 9V13M12 17H12.01', stroke: 'currentColor', 'stroke-width': '2', 'stroke-linecap': 'round', 'stroke-linejoin': 'round' })
+]);
+
+const InfoSVG = h('svg', { viewBox: '0 0 24 24', fill: 'none', xmlns: 'http://www.w3.org/2000/svg' }, [
+    h('circle', { cx: '12', cy: '12', r: '10', fill: 'currentColor', opacity: '0.2' }),
+    h('path', { d: 'M12 16V12M12 8H12.01', stroke: 'currentColor', 'stroke-width': '2', 'stroke-linecap': 'round', 'stroke-linejoin': 'round' })
+]);
 
 // Define ref for self-dismissing logic
 const isVisible = ref(false);
@@ -50,36 +71,40 @@ const getAlertConfig = (type) => {
     switch(type) {
         case 'success':
             return {
-                icon: CheckCircle,
-                bgClass: 'bg-emerald-50 dark:bg-emerald-900/30',
-                borderClass: 'border-emerald-200 dark:border-emerald-800',
-                textClass: 'text-emerald-800 dark:text-emerald-300',
-                iconClass: 'text-emerald-500 dark:text-emerald-400'
+                icon: SuccessSVG,
+                bgClass: 'bg-white/80 dark:bg-slate-900/80',
+                borderClass: 'border-emerald-500/20',
+                textClass: 'text-slate-800 dark:text-slate-200',
+                accentClass: 'bg-emerald-500',
+                iconClass: 'text-emerald-500'
             };
         case 'error':
             return {
-                icon: XCircle,
-                bgClass: 'bg-rose-50 dark:bg-rose-900/30',
-                borderClass: 'border-rose-200 dark:border-rose-800',
-                textClass: 'text-rose-800 dark:text-rose-300',
-                iconClass: 'text-rose-500 dark:text-rose-400'
+                icon: ErrorSVG,
+                bgClass: 'bg-white/80 dark:bg-slate-900/80',
+                borderClass: 'border-rose-500/20',
+                textClass: 'text-slate-800 dark:text-slate-200',
+                accentClass: 'bg-rose-500',
+                iconClass: 'text-rose-500'
             };
         case 'warning':
             return {
-                icon: AlertTriangle,
-                bgClass: 'bg-amber-50 dark:bg-amber-900/30',
-                borderClass: 'border-amber-200 dark:border-amber-800',
-                textClass: 'text-amber-800 dark:text-amber-300',
-                iconClass: 'text-amber-500 dark:text-amber-400'
+                icon: WarningSVG,
+                bgClass: 'bg-white/80 dark:bg-slate-900/80',
+                borderClass: 'border-amber-500/20',
+                textClass: 'text-slate-800 dark:text-slate-200',
+                accentClass: 'bg-amber-500',
+                iconClass: 'text-amber-500'
             };
         case 'info':
         default:
             return {
-                icon: Info,
-                bgClass: 'bg-blue-50 dark:bg-blue-900/30',
-                borderClass: 'border-blue-200 dark:border-blue-800',
-                textClass: 'text-blue-800 dark:text-blue-300',
-                iconClass: 'text-blue-500 dark:text-blue-400'
+                icon: InfoSVG,
+                bgClass: 'bg-white/80 dark:bg-slate-900/80',
+                borderClass: 'border-blue-500/20',
+                textClass: 'text-slate-800 dark:text-slate-200',
+                accentClass: 'bg-blue-500',
+                iconClass: 'text-blue-500'
             };
     }
 };
@@ -94,29 +119,28 @@ const getAlertConfig = (type) => {
         leave-from-class="opacity-100"
         leave-to-class="opacity-0"
     >
-        <div v-if="isVisible" class="fixed bottom-4 right-4 z-50 max-w-sm w-full">
+        <div v-if="isVisible" class="fixed bottom-6 right-6 z-[9999] max-w-sm w-full animate-in fade-in slide-in-from-right-4 duration-300">
             <div :class="[
-                'rounded-xl border p-4 shadow-lg backdrop-blur-md flex items-start gap-3',
+                'relative overflow-hidden rounded-2xl border p-5 shadow-2xl backdrop-blur-xl flex items-center gap-4 transition-all',
                 getAlertConfig(flashType).bgClass,
                 getAlertConfig(flashType).borderClass
             ]">
-                <div class="flex-shrink-0 mt-0.5">
-                    <component :is="getAlertConfig(flashType).icon" :class="['w-5 h-5', getAlertConfig(flashType).iconClass]" />
+                <!-- Decorative Accent Line -->
+                <div :class="['absolute left-0 top-0 bottom-0 w-1.5', getAlertConfig(flashType).accentClass]"></div>
+
+                <div class="flex-shrink-0 w-10 h-10 flex items-center justify-center">
+                    <component :is="getAlertConfig(flashType).icon" :class="['w-10 h-10', getAlertConfig(flashType).iconClass]" />
                 </div>
-                <div class="flex-1 w-0">
-                    <p :class="['text-sm font-medium leading-relaxed', getAlertConfig(flashType).textClass]">
+                
+                <div class="flex-1 min-w-0">
+                    <p :class="['text-sm font-bold leading-tight', getAlertConfig(flashType).textClass]">
                         {{ flashMessage }}
                     </p>
                 </div>
-                <div class="flex-shrink-0 flex">
-                    <button @click="close" type="button" :class="[
-                        'inline-flex rounded-md p-1.5 focus:outline-none focus:ring-2 focus:ring-offset-2 hover:bg-black/5 dark:hover:bg-white/5 transition-colors',
-                        getAlertConfig(flashType).textClass
-                    ]">
-                        <span class="sr-only">Close</span>
-                        <X class="w-4 h-4" />
-                    </button>
-                </div>
+
+                <button @click="close" type="button" class="flex-shrink-0 p-1.5 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
+                    <X class="w-4 h-4 text-slate-400" />
+                </button>
             </div>
         </div>
     </transition>

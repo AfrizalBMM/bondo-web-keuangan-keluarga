@@ -10,6 +10,8 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Redirect;
 use Inertia\Inertia;
 use Inertia\Response;
+use App\Models\Family;
+use App\Models\User;
 
 class ProfileController extends Controller
 {
@@ -18,8 +20,8 @@ class ProfileController extends Controller
      */
     public function edit(Request $request): Response
     {
-        // Tambahkan ->load('family') agar data keluarga ikut dikirim ke Vue
-        $request->user()->load('family');
+        // Tambahkan ->load('family.users') agar data keluarga & anggotanya ikut dikirim ke Vue
+        $request->user()->load('family.users');
 
         return Inertia::render('Profile/Edit', [
             'mustVerifyEmail' => $request->user() instanceof MustVerifyEmail,
@@ -74,7 +76,7 @@ class ProfileController extends Controller
             'role' => 'Member' 
         ]);
 
-        return Redirect::route('dashboard')->with('message', 'Anda telah keluar dari grup keluarga.');
+        return Redirect::route('dashboard')->with('success', 'Anda telah keluar dari grup keluarga.');
     }
 
     public function destroyFamily(Request $request, Family $family): RedirectResponse
@@ -84,17 +86,68 @@ class ProfileController extends Controller
             abort(403, 'Hanya Kepala Keluarga yang dapat membubarkan keluarga.');
         }
 
-        // Ambil semua member keluarga ini dan reset mereka sebelum dihapus
-        \App\Models\User::where('family_id', $family->id)->update([
-            'family_id' => null,
-            'role' => 'Member'
-        ]);
+        // PERINGATAN: Cek apakah masih ada anggota keluarga lain (selain Head)
+        $memberCount = $family->users()->count();
+        if ($memberCount > 1) {
+            return Redirect::back()->with('error', 'Tidak dapat membubarkan keluarga karena masih ada anggota lain. Harap minta anggota lain keluar terlebih dahulu.');
+        }
 
         // Hapus data keluarga (Pastikan di database sudah ada 'onDelete cascade' 
         // untuk tabel wallets, transactions, dll agar ikut terhapus)
         $family->delete();
 
-        return Redirect::route('dashboard')->with('message', 'Keluarga telah dibubarkan dan data telah dihapus.');
+        // Reset user Head sendiri (karena family_id sudah null dari cascade/manual)
+        $request->user()->update([
+            'family_id' => null,
+            'role' => 'Member'
+        ]);
+
+        return Redirect::route('dashboard')->with('success', 'Keluarga telah dibubarkan dan data telah dihapus.');
+    }
+
+    public function updateFamily(Request $request): RedirectResponse
+    {
+        $request->validate([
+            'name' => ['required', 'string', 'max:255'],
+        ]);
+
+        $family = $request->user()->family;
+
+        if (!$family || $request->user()->role !== 'Head') {
+            abort(403, 'Hanya Kepala Keluarga yang dapat mengedit informasi keluarga.');
+        }
+
+        $family->update([
+            'name' => $request->name
+        ]);
+
+        return Redirect::back()->with('success', 'Nama keluarga berhasil diperbarui.');
+    }
+
+    public function removeMember(Request $request, User $user): RedirectResponse
+    {
+        // 1. Pastikan yang menghapus adalah Head
+        if ($request->user()->role !== 'Head') {
+            abort(403, 'Hanya Kepala Keluarga yang dapat mengeluarkan anggota.');
+        }
+
+        // 2. Pastikan member yang dihapus ada di keluarga yang sama
+        if ($user->family_id !== $request->user()->family_id) {
+            abort(403, 'Anggota tidak ditemukan dalam grup keluarga Anda.');
+        }
+
+        // 3. Pastikan tidak menghapus diri sendiri (Head)
+        if ($user->id === $request->user()->id) {
+            abort(403, 'Anda tidak dapat mengeluarkan diri sendiri.');
+        }
+
+        // 4. Reset data keluarga member tersebut
+        $user->update([
+            'family_id' => null,
+            'role' => 'Member'
+        ]);
+
+        return Redirect::back()->with('success', 'Anggota ' . $user->name . ' telah dikeluarkan dari grup keluarga.');
     }
 
 }

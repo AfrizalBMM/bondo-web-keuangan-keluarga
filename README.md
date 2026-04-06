@@ -5,10 +5,12 @@ Family Finance Hub adalah aplikasi manajemen keuangan keluarga modern yang diran
 ## ✨ Fitur Utama
 
 - **🧠 Smart Add AI**: Tambah transaksi semudah *chatting*! Cukup ketik kalimat santai (misal: "Beli token listrik 100 ribu dari dompet BCA"), dan AI akan mengkategorikan dan mencatatnya secara otomatis.
-- **⚡ Real-time Synchronization**: Dibangun dengan Laravel Reverb. Ketika pasangan Anda mencatat pengeluaran di perangkat mereka, saldo dan daftar aktivitas di layar Anda akan langsung diperbarui saat itu juga tanpa perlu memuat ulang (*refresh*) halaman.
-- **📱 PWA & Push Notifications**: Mendukung fungsionalitas *Progressive Web App* dengan Notifikasi Push di latar belakang. Anda bisa menerima peringatan ketika pengeluaran mendekati batas anggaran bulanan atau pengingat jatuh tempo cicilan hutang.
-- **👁️ Global Visibility Toggle (Masking)**: Fitur privasi untuk menyembunyikan nominal saldo sensitif. Pengaturan ini tersimpan secara persisten di seluruh halaman aplikasi.
-- **🎨 Modern UI/UX**: Membawa tampilan profesional dengan desain premium, *Dark/Light mode* terintegrasi, skema warna *Royal Blue*, dan tipografi *Inter*.
+- **⚡ Real-time Synchronization**: Dibangun dengan Laravel Reverb. Saldo dan aktivitas di layar Anda akan langsung diperbarui seketika (real-time) saat pasangan Anda mencatat transaksi.
+- **🎭 Dual-Stage Loading System**: Pengalaman perpindahan halaman yang premium dengan *progress bar* Royal Blue dan *pulsing logo overlay* transparan untuk memastikan transisi terasa smooth dan modern.
+- **👨‍👩‍👧‍👦 Advanced Family Management**: Sistem manajemen keluarga lengkap dengan peran **Kepala Keluarga (Head)** dan **Anggota (Member)**. Kepala keluarga memiliki otoritas penuh untuk mengelola nama grup dan mengeluarkan anggota dari tim.
+- **📱 PWA & Push Notifications**: Mendukung fungsionalitas *Progressive Web App* dengan Notifikasi Push yang telah dioptimalkan (VAPID 65-byte standard).
+- **👁️ Global Visibility & Theme Toggle**: Akses cepat untuk menyembunyikan saldo (*Masking*) dan beralih antara *Night/Light mode* langsung dari header utama yang responsif.
+- **🎨 Premium Bondo Aesthetics**: Identitas visual baru dengan logo kustom "Bondo B", skema warna *Royal Blue* & *Emerald*, serta penggunaan komponen modal berbasis *glassmorphism*.
 - **📊 Modul Finansial Lengkap**: Pusat kendali (*Command Center*) menyeluruh yang mengelola Dompet, Kategori, Aset (Tabungan/Investasi), Target Finansial (Goals), Hutang/Piutang, dan Anggaran Bulanan (Budget).
 
 ## 🛠️ Teknologi yang Digunakan

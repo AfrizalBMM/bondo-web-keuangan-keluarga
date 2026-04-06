@@ -38,18 +38,18 @@ class WalletController extends Controller
     {
         $validated = $request->validate([
             'name' => 'required|string|max:255',
-            'account_number' => 'nullable|string|max:50', // <-- Tambahkan ini
+            'account_number' => 'nullable|string|max:50',
             'type' => 'required|string',
-            'initialBalance' => 'required|numeric',
+            'balance' => 'required|numeric',
             'color' => 'required|string',
         ]);
 
         $request->user()->family->wallets()->create([
             'name' => $validated['name'],
-            'account_number' => $validated['account_number'], // <-- Tambahkan ini
+            'account_number' => $validated['account_number'],
             'type' => $validated['type'],
-            'starting_balance' => $validated['initialBalance'],
-            'balance' => $validated['initialBalance'],
+            'starting_balance' => $validated['balance'],
+            'balance' => $validated['balance'],
             'color' => $validated['color'],
         ]);
 

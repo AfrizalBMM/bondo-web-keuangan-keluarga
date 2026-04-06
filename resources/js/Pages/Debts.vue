@@ -2,6 +2,7 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head, useForm, router } from '@inertiajs/vue3';
 import { useVisibility } from '@/Composables/useVisibility';
+import { useConfirm } from '@/Composables/useConfirm';
 import { ref, computed } from 'vue';
 import { Plus, ArrowDownRight, ArrowUpRight, Clock, CheckCircle2, AlertTriangle, AlertCircle, X, Check, User, CircleDollarSign, CalendarDays, Wallet, Edit2, Trash2 } from 'lucide-vue-next';
 import PrimaryButton from '@/Components/PrimaryButton.vue';
@@ -14,6 +15,7 @@ const props = defineProps({
 });
 
 const { maskValue } = useVisibility();
+const { confirm: confirmModal } = useConfirm();
 
 // Format Currency
 const IDR = new Intl.NumberFormat('id-ID', {
@@ -85,11 +87,16 @@ const openEditModal = (debt) => {
 };
 
 const deleteDebt = (id) => {
-    if (confirm('Apakah Anda yakin ingin menghapus catatan ini beserta riwayat pembayarannya?')) {
-        router.delete(route('debts.destroy', id), {
-            preserveScroll: true
-        });
-    }
+    confirmModal({
+        title: 'Hapus Catatan?',
+        message: 'Apakah Anda yakin ingin menghapus catatan ini beserta seluruh riwayat pembayarannya?',
+        confirmText: 'Ya, Hapus',
+        onConfirm: () => {
+            router.delete(route('debts.destroy', id), {
+                preserveScroll: true
+            });
+        }
+    });
 };
 
 const openPaymentModal = (debt) => {

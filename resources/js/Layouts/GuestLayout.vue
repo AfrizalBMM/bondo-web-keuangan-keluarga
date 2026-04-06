@@ -1,6 +1,7 @@
 <script setup>
 import { Link } from '@inertiajs/vue3';
 import { Wallet, ShieldCheck, TrendingUp, Sparkles, Activity } from 'lucide-vue-next';
+import GlobalAlert from '@/Components/GlobalAlert.vue';
 </script>
 
 <template>
@@ -86,6 +87,7 @@ import { Wallet, ShieldCheck, TrendingUp, Sparkles, Activity } from 'lucide-vue-
                 </p>
             </div>
         </div>
+        <GlobalAlert />
     </div>
 </template>
 

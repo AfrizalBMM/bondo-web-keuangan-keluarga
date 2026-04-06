@@ -2,6 +2,7 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head, useForm, router } from '@inertiajs/vue3';
 import { useVisibility } from '@/Composables/useVisibility';
+import { useConfirm } from '@/Composables/useConfirm';
 import { ref, computed } from 'vue';
 import { Plus, Target, CheckCircle2, TrendingUp, X, Flag, CircleDollarSign, CalendarDays, Palette, Edit2, Trash2, Wallet } from 'lucide-vue-next';
 import PrimaryButton from '@/Components/PrimaryButton.vue';
@@ -14,6 +15,7 @@ const props = defineProps({
 });
 
 const { maskValue } = useVisibility();
+const { confirm: confirmModal } = useConfirm();
 
 // Format Currency
 const IDR = new Intl.NumberFormat('id-ID', {
@@ -77,11 +79,16 @@ const openEditModal = (goal) => {
 };
 
 const deleteGoal = (id) => {
-    if (confirm('Apakah Anda yakin ingin menghapus target beserta riwayat progresnya?')) {
-        router.delete(route('goals.destroy', id), {
-            preserveScroll: true
-        });
-    }
+    confirmModal({
+        title: 'Hapus Target?',
+        message: 'Apakah Anda yakin ingin menghapus target beserta riwayat progresnya?',
+        confirmText: 'Ya, Hapus',
+        onConfirm: () => {
+            router.delete(route('goals.destroy', id), {
+                preserveScroll: true
+            });
+        }
+    });
 };
 
 const submitAddGoal = () => {

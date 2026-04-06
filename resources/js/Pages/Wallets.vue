@@ -2,6 +2,7 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head, useForm, router } from '@inertiajs/vue3';
 import { useVisibility } from '@/Composables/useVisibility';
+import { useConfirm } from '@/Composables/useConfirm';
 import { ref } from 'vue';
 import { 
     Plus, Wallet, CreditCard, Building, Smartphone, X, 
@@ -16,6 +17,7 @@ const props = defineProps({
 });
 
 const { maskValue } = useVisibility();
+const { confirm: confirmModal } = useConfirm();
 
 const IDR = new Intl.NumberFormat('id-ID', {
     style: 'currency',
@@ -28,9 +30,9 @@ const editingWalletId = ref(null);
 
 const form = useForm({
     name: '',
-    account_number: '', // Tambahan field baru
+    account_number: '', 
     type: 'Bank',
-    initialBalance: '',
+    balance: '',
     color: 'bg-blue-600'
 });
 
@@ -62,9 +64,9 @@ const openAddModal = () => {
 const openEditModal = (wallet) => {
     editingWalletId.value = wallet.id;
     form.name = wallet.name;
-    form.account_number = wallet.account_number || ''; // Isi data no rekening
+    form.account_number = wallet.account_number || ''; 
     form.type = wallet.type;
-    form.initialBalance = wallet.balance; 
+    form.balance = wallet.balance;  // Sesuai dengan field backend
     form.color = wallet.color;
     form.clearErrors();
     isAddModalOpen.value = true;
@@ -91,11 +93,15 @@ const submitAddWallet = () => {
 };
 
 const deleteWallet = (id) => {
-    if (confirm('Apakah Anda yakin ingin menghapus dompet ini?')) {
-        router.delete(route('wallets.destroy', id), {
-            preserveScroll: true
-        });
-    }
+    confirmModal({
+        title: 'Hapus Dompet?',
+        message: 'Apakah Anda yakin ingin menghapus dompet ini? Semua data transaksi terkait akan ikut terhapus.',
+        onConfirm: () => {
+            router.delete(route('wallets.destroy', id), {
+                preserveScroll: true
+            });
+        }
+    });
 };
 </script>
 
@@ -222,8 +228,9 @@ const deleteWallet = (id) => {
                             <InputLabel for="initial_balance" class="font-bold text-slate-700 dark:text-slate-300 mb-2">Saldo Sekarang</InputLabel>
                             <div class="relative">
                                 <span class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-sm">Rp</span>
-                                <input type="number" id="initial_balance" v-model="form.initialBalance" class="w-full pl-10 pr-4 py-3 rounded-xl border-slate-200 dark:border-slate-700 dark:bg-slate-950 dark:text-white focus:ring-royal-500" placeholder="0" />
+                                <input type="number" id="initial_balance" v-model="form.balance" class="w-full pl-10 pr-4 py-3 rounded-xl border-slate-200 dark:border-slate-700 dark:bg-slate-950 dark:text-white focus:ring-royal-500" placeholder="0" />
                             </div>
+                            <div v-if="form.errors.balance" class="text-xs text-red-500 mt-1">{{ form.errors.balance }}</div>
                         </div>
                     </div>
 

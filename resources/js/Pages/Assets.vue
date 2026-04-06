@@ -2,6 +2,7 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head, useForm, router } from '@inertiajs/vue3';
 import { useVisibility } from '@/Composables/useVisibility';
+import { useConfirm } from '@/Composables/useConfirm';
 import { ref, computed } from 'vue';
 import { Plus, Edit2, Trash2, Home, Car, Gem, Briefcase, TrendingDown, ArrowDownRight, X, Type, Tags, CalendarDays, CircleDollarSign } from 'lucide-vue-next';
 import PrimaryButton from '@/Components/PrimaryButton.vue';
@@ -13,6 +14,7 @@ const props = defineProps({
 });
 
 const { maskValue } = useVisibility();
+const { confirm: confirmModal } = useConfirm();
 
 // Format Currency
 const IDR = new Intl.NumberFormat('id-ID', {
@@ -80,11 +82,16 @@ const openEditModal = (asset) => {
 };
 
 const deleteAsset = (id) => {
-    if (confirm('Apakah Anda yakin ingin menghapus aset ini?')) {
-        router.delete(route('assets.destroy', id), {
-            preserveScroll: true
-        });
-    }
+    confirmModal({
+        title: 'Hapus Aset?',
+        message: 'Apakah Anda yakin ingin menghapus aset ini? Data nilai dan depresiasi aset akan hilang.',
+        confirmText: 'Ya, Hapus',
+        onConfirm: () => {
+            router.delete(route('assets.destroy', id), {
+                preserveScroll: true
+            });
+        }
+    });
 };
 
 const submitAddAsset = () => {

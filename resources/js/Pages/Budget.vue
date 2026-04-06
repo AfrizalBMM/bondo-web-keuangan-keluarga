@@ -2,6 +2,7 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head, useForm, router } from '@inertiajs/vue3';
 import { useVisibility } from '@/Composables/useVisibility';
+import { useConfirm } from '@/Composables/useConfirm';
 import { ref, computed } from 'vue';
 import { Plus, Target, AlertTriangle, AlertCircle, X, Check, PieChart, Tags, CircleDollarSign, Edit2, Trash2 } from 'lucide-vue-next';
 import PrimaryButton from '@/Components/PrimaryButton.vue';
@@ -14,6 +15,7 @@ const props = defineProps({
 });
 
 const { maskValue } = useVisibility();
+const { confirm: confirmModal } = useConfirm();
 
 // Format Currency
 const IDR = new Intl.NumberFormat('id-ID', {
@@ -70,11 +72,16 @@ const openEditModal = (budget) => {
 };
 
 const deleteBudget = (id) => {
-    if (confirm('Apakah Anda yakin ingin menghapus anggaran ini?')) {
-        router.delete(route('budget.destroy', id), {
-            preserveScroll: true
-        });
-    }
+    confirmModal({
+        title: 'Hapus Anggaran?',
+        message: 'Apakah Anda yakin ingin menghapus anggaran untuk kategori ini?',
+        confirmText: 'Ya, Hapus',
+        onConfirm: () => {
+            router.delete(route('budget.destroy', id), {
+                preserveScroll: true
+            });
+        }
+    });
 };
 
 const submitAddBudget = () => {

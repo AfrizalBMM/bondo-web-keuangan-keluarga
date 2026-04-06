@@ -49,7 +49,7 @@ class FamilyController extends Controller
             // 2. Hubungkan user yang login ke keluarga ini
             $request->user()->update([
                 'family_id' => $family->id,
-                // Jika kamu punya kolom 'role', set sebagai 'head' di sini
+                'role' => 'Head', // Set sebagai Kepala Keluarga
             ]);
 
             DB::commit();
@@ -81,7 +81,7 @@ class FamilyController extends Controller
         
         $user->update([
             'family_id' => $family->id,
-            // Role default biasanya 'member'
+            'role' => 'Member', // Set sebagai Anggota biasa
         ]);
 
         return redirect()->route('dashboard')->with('success', 'Selamat! Anda telah bergabung dengan keluarga ' . $family->name);
