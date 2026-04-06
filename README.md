@@ -6,11 +6,13 @@ Family Finance Hub adalah aplikasi manajemen keuangan keluarga modern yang diran
 
 - **🧠 Smart Add AI**: Tambah transaksi semudah *chatting*! Cukup ketik kalimat santai (misal: "Beli token listrik 100 ribu dari dompet BCA"), dan AI akan mengkategorikan dan mencatatnya secara otomatis.
 - **⚡ Real-time Synchronization**: Dibangun dengan Laravel Reverb. Saldo dan aktivitas di layar Anda akan langsung diperbarui seketika (real-time) saat pasangan Anda mencatat transaksi.
+- **✨ Bondo AI Advisor**: Konsultan keuangan pribadi bertenaga **Groq (Llama 3)**! Chat untuk menganalisa pengeluaran harian, merencanakan pembelian besar (*what-if analysis*), mencari transaksi masa lalu, dan mendapatkan saran berbasis data riil 3 bulan terakhir.
 - **🎭 Dual-Stage Loading System**: Pengalaman perpindahan halaman yang premium dengan *progress bar* Royal Blue dan *pulsing logo overlay* transparan untuk memastikan transisi terasa smooth dan modern.
 - **👨‍👩‍👧‍👦 Advanced Family Management**: Sistem manajemen keluarga lengkap dengan peran **Kepala Keluarga (Head)** dan **Anggota (Member)**. Kepala keluarga memiliki otoritas penuh untuk mengelola nama grup dan mengeluarkan anggota dari tim.
 - **📱 PWA & Push Notifications**: Mendukung fungsionalitas *Progressive Web App* dengan Notifikasi Push yang telah dioptimalkan (VAPID 65-byte standard).
 - **👁️ Global Visibility & Theme Toggle**: Akses cepat untuk menyembunyikan saldo (*Masking*) dan beralih antara *Night/Light mode* langsung dari header utama yang responsif.
 - **🎨 Premium Bondo Aesthetics**: Identitas visual baru dengan logo kustom "Bondo B", skema warna *Royal Blue* & *Emerald*, serta penggunaan komponen modal berbasis *glassmorphism*.
+- **🖼️ Avatar Profil**: Upload dan ganti foto profil langsung dari halaman pengaturan. Foto ditampilkan di navbar dengan fallback inisial nama jika belum ada foto.
 - **📊 Modul Finansial Lengkap**: Pusat kendali (*Command Center*) menyeluruh yang mengelola Dompet, Kategori, Aset (Tabungan/Investasi), Target Finansial (Goals), Hutang/Piutang, dan Anggaran Bulanan (Budget).
 
 ## 🛠️ Teknologi yang Digunakan
@@ -23,7 +25,7 @@ Aplikasi ini dibangun menggunakan *stack* teknologi modern untuk memastikan stab
 - **Styling**: [Tailwind CSS](https://tailwindcss.com) v3
 - **WebSockets / Real-time**: [Laravel Reverb](https://reverb.laravel.com)
 - **State Management**: [Pinia](https://pinia.vuejs.org) & [@vueuse/core](https://vueuse.org)
-- **AI Integration**: Gemini AI API
+- **AI Integration**: [Groq API](https://console.groq.com) (Llama 3.3 70B Versatile) — ultra-fast AI inference
 - **Icons**: Lucide Vue Next
 
 ## 🚀 Panduan Instalasi

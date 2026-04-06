@@ -40,4 +40,8 @@ return [
         'model' => 'llama-3.3-70b-versatile', // Model terbaik & stabil saat ini
     ],
 
+    'gemini' => [
+        'key' => env('GEMINI_API_KEY'),
+    ],
+
 ];

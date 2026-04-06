@@ -8,6 +8,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Redirect;
+use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use Inertia\Response;
 use App\Models\Family;
@@ -43,6 +44,32 @@ class ProfileController extends Controller
         $request->user()->save();
 
         return Redirect::route('profile.edit');
+    }
+
+    /**
+     * Update the user's avatar.
+     */
+    public function updateAvatar(Request $request): RedirectResponse
+    {
+        $request->validate([
+            'avatar' => ['required', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
+        ]);
+
+        $user = $request->user();
+
+        // Hapus avatar lama jika ada
+        if ($user->avatar && Storage::disk('public')->exists('avatars/' . $user->avatar)) {
+            Storage::disk('public')->delete('avatars/' . $user->avatar);
+        }
+
+        // Simpan avatar baru
+        $file = $request->file('avatar');
+        $filename = $user->id . '_' . time() . '.' . $file->getClientOriginalExtension();
+        $file->storeAs('avatars', $filename, 'public');
+
+        $user->update(['avatar' => $filename]);
+
+        return Redirect::back()->with('success', 'Foto profil berhasil diperbarui.');
     }
 
     /**

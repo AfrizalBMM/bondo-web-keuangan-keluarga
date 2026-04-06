@@ -28,4 +28,13 @@ class Budget extends Model
     {
         return $this->belongsTo(Category::class);
     }
+
+    public function spent()
+    {
+        return Transaction::where('family_id', $this->family_id)
+            ->where('category_id', $this->category_id)
+            ->where('type', 'Expense')
+            ->whereBetween('date', [now()->startOfMonth(), now()->endOfMonth()])
+            ->sum('amount');
+    }
 }

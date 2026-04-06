@@ -16,7 +16,7 @@ import {
     Moon, Sun, Eye, EyeOff, Bell, BellRing,
     LayoutDashboard, Wallet, ArrowRightLeft, 
     Tags, Briefcase, Target, CreditCard, 
-    PieChart, BarChart3, User, LogOut, Menu
+    PieChart, BarChart3, User, LogOut, Menu, Sparkles
 } from 'lucide-vue-next';
 
 // 1. State & Composables
@@ -124,6 +124,9 @@ onUnmounted(() => {
                                 <NavLink :href="route('reports')" :active="route().current('reports')">
                                     <BarChart3 class="w-4 h-4 mr-1 hidden lg:block" /> Laporan
                                 </NavLink>
+                                <NavLink :href="route('ai.advisor')" :active="route().current('ai.advisor')">
+                                    <Sparkles class="w-4 h-4 mr-1 hidden lg:block text-royal-500" /> Bondo AI
+                                </NavLink>
                             </div>
                         </div>
                     </div>
@@ -142,9 +145,21 @@ onUnmounted(() => {
                         <div class="relative ms-3">
                             <Dropdown align="right" width="48">
                                 <template #trigger>
-                                    <button type="button" class="inline-flex items-center rounded-md border border-transparent bg-white px-3 py-2 text-sm font-medium text-gray-500 transition hover:text-gray-700 dark:bg-gray-800 dark:text-gray-400">
-                                        {{ $page.props.auth.user.name }}
-                                        <svg class="ms-2 h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                                    <button type="button" class="inline-flex items-center gap-2.5 rounded-xl border border-transparent bg-white/50 dark:bg-slate-800/50 px-3 py-1.5 text-sm font-medium text-slate-700 dark:text-slate-200 transition hover:bg-white dark:hover:bg-slate-800 shadow-sm">
+                                        <!-- Avatar -->
+                                        <span class="w-7 h-7 rounded-lg overflow-hidden flex-shrink-0">
+                                            <img
+                                                v-if="$page.props.auth.user.avatar"
+                                                :src="`/storage/avatars/${$page.props.auth.user.avatar}`"
+                                                :alt="$page.props.auth.user.name"
+                                                class="w-full h-full object-cover"
+                                            />
+                                            <span v-else class="w-full h-full bg-gradient-to-br from-royal-500 to-royal-700 flex items-center justify-center text-white text-xs font-bold">
+                                                {{ $page.props.auth.user.name?.charAt(0).toUpperCase() }}
+                                            </span>
+                                        </span>
+                                        <span class="hidden lg:block max-w-[100px] truncate">{{ $page.props.auth.user.name }}</span>
+                                        <svg class="h-4 w-4 text-slate-400" viewBox="0 0 20 20" fill="currentColor">
                                             <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
                                         </svg>
                                     </button>
@@ -173,6 +188,7 @@ onUnmounted(() => {
                                     <DropdownLink :href="route('goals')"> <Target class="w-4 h-4 inline mr-2" /> Goals </DropdownLink>
                                     <DropdownLink :href="route('debts')"> <CreditCard class="w-4 h-4 inline mr-2" /> Hutang </DropdownLink>
                                     <DropdownLink :href="route('budget')"> <PieChart class="w-4 h-4 inline mr-2" /> Budget </DropdownLink>
+                                    <DropdownLink :href="route('ai.advisor')"> <Sparkles class="w-4 h-4 inline mr-2 text-royal-500" /> Bondo AI </DropdownLink>
                                     <div class="border-t border-gray-100 dark:border-gray-700 my-1"></div>
                                     <DropdownLink :href="route('logout')" method="post" as="button" class="text-rose-600 dark:text-rose-400"> 
                                         <LogOut class="w-4 h-4 inline mr-2" /> Keluar 
@@ -226,9 +242,9 @@ onUnmounted(() => {
                     <span class="text-[10px]">Laporan</span>
                 </Link>
 
-                <Link :href="route('profile.edit')" class="inline-flex flex-col items-center justify-center px-1 hover:bg-gray-50/50 dark:hover:bg-gray-800/50 group transition-colors" :class="{ 'text-royalblue-600 dark:text-royalblue-400': route().current('profile.edit'), 'text-gray-500 dark:text-gray-400': !route().current('profile.edit') }">
-                    <User class="w-6 h-6 mb-1 text-inherit" />
-                    <span class="text-[10px]">Profil</span>
+                <Link :href="route('ai.advisor')" class="inline-flex flex-col items-center justify-center px-1 hover:bg-gray-50/50 dark:hover:bg-gray-800/50 group transition-colors" :class="{ 'text-royalblue-600 dark:text-royalblue-400': route().current('ai.advisor'), 'text-gray-500 dark:text-gray-400': !route().current('ai.advisor') }">
+                    <Sparkles class="w-6 h-6 mb-1 text-inherit" />
+                    <span class="text-[10px]">Bondo AI</span>
                 </Link>
 
             </div>

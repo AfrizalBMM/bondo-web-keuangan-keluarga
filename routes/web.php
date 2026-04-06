@@ -12,6 +12,7 @@ use App\Http\Controllers\BudgetController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\PushNotificationController;
+use App\Http\Controllers\AIChatController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
@@ -92,12 +93,17 @@ Route::middleware(['auth', 'verified', 'has_family'])->group(function () {
     // Push Notifications
     Route::post('/push-subscriptions', [PushNotificationController::class, 'store'])->name('push.subscribe');
     Route::post('/push-subscriptions/delete', [PushNotificationController::class, 'destroy'])->name('push.unsubscribe');
+
+    // AI Advisor Chat
+    Route::get('/ai-advisor', [AIChatController::class, 'index'])->name('ai.advisor');
+    Route::post('/ai-advisor/chat', [AIChatController::class, 'chat'])->name('ai.chat');
 });
 
 // 5. User Profile (Standar Laravel Breeze)
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
+    Route::post('/profile/avatar', [ProfileController::class, 'updateAvatar'])->name('profile.avatar');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
     Route::patch('/profile/family', [ProfileController::class, 'updateFamily'])->name('family.update');
     Route::delete('/profile/family', [ProfileController::class, 'destroyFamily'])->name('family.destroy');
